@@ -1,77 +1,82 @@
 ---
 name: snake-game
-description: 生成并验证可直接在浏览器游玩的贪吃蛇网页游戏：居中网格棋盘、开始／暂停与选择难度按钮、实时得分与历史最高分，撞墙或撞到自己判负，填满全部格子判通关。当用户提出「贪吃蛇」「Snake game」「做一个打开就能玩的网页小游戏」，或要求调整已有贪吃蛇页面的难度速度、棋盘大小、配色、按键与移动端操作时使用。不处理网页抓取、PDF 与 Anki 相关需求。
+description: "Builds and verifies a browser-playable Snake game delivered as one self-contained HTML page: a centred grid board, Start/Pause and Difficulty buttons, a live score and best score, a five-language interface switcher (English by default), a loss when the head hits a wall or the snake's own body, and a win when the board is filled. Use when the user asks for a snake game, 贪吃蛇, or a small arcade page they can open and play right away, or wants an existing snake page adjusted (speed, board size, difficulty levels, colours, keys, touch controls, languages). Does not handle web scraping, PDF or Anki work."
 ---
 
-# 贪吃蛇网页游戏（Snake Game）
+# Snake Game (web page)
 
-## 目标
+**English** · [简体中文](SKILL.zh-CN.md) · [Français](SKILL.fr.md) · [Русский](SKILL.ru.md) · [日本語](SKILL.ja.md)
 
-用户要的是一条能立刻玩的蛇，不是一个需要安装环境的工程。默认交付**一个自包含的 `index.html`**：HTML、CSS、JavaScript 全部内联，无外部依赖、无构建步骤、无网络请求，双击即可游玩。
+## Goal
 
-判断完成的依据是用户能打开页面并实际玩起来，而不是代码写完了。
+What the user wants is a snake they can play immediately, not a project that needs an environment set up. Deliver **one self-contained `index.html`** by default: HTML, CSS and JavaScript fully inline, no external dependencies, no build step, no network requests — double-click and play.
 
-## 固定规格
+"Done" means the user can open the page and actually play it, not that the code was written.
 
-除用户明确另有要求，交付页面必须同时满足：
+## Fixed spec
 
-| 位置 | 要求 |
+Unless the user explicitly asks otherwise, the delivered page must satisfy all of the following:
+
+| Area | Requirement |
 | --- | --- |
-| 顶部 | 计分条 `得分: N　历史最高分: M`，游戏中实时更新；最高分在游戏结束时写入 `localStorage`，刷新页面后保留 |
-| 中间 | 游戏显示区域：正方形网格棋盘（默认 20 × 20 格），浅青绿底色 + 白色网格线 + 深色外框；窄屏自适应缩放 |
-| 下方 | 两个按钮：`开始游戏`（进行中变 `暂停游戏`，暂停时变 `继续游戏`，结束后变 `重新开始`）与 `选择难度：<当前难度>`（点击依次循环全部难度档位） |
-| 蛇 | 蛇头紫色方块带两只眼睛，蛇身为暗红色方块，每节用一个小箭头指示该节的行进方向 |
-| 食物 | 橙色方块，随机落在空格子上，不与蛇身重叠 |
-| 难度 | 难度越高蛇越快：简单 220 ms/格、普通 150 ms/格、困难 100 ms/格、地狱 60 ms/格；游戏中切换立即生效，并在提示行显示当前每格毫秒数 |
-| 失败 | 蛇头撞到墙壁或撞到自己身体 → 游戏失败，覆盖层显示原因与最终得分 |
-| 通关 | 蛇填满全部格子 → 游戏结束（通关），不得再生成食物 |
-| 操作 | 方向键或 WASD 转向，空格暂停／继续；移动端滑动转向、轻点暂停；禁止 180° 反向掉头 |
-| 状态 | 空闲、暂停、结束都在棋盘上显示覆盖提示；提示行用 `aria-live="polite"` 播报，按钮可用键盘操作 |
+| Top | Score line `Score: N　Best: M`, updated live; the best score is written to `localStorage` when a game ends and survives a refresh |
+| Middle | Game area: a square grid board (20 × 20 cells by default), light teal background + white grid lines + dark border; scales down on narrow screens |
+| Below | Two buttons: `Start Game` (becomes `Pause` while running, `Resume` when paused, `Restart` after a game ends) and `Difficulty: <current>` (clicking cycles through every level) |
+| Snake | Purple head with two eyes, dark red body segments, each body segment carrying a small arrow showing the direction it travels |
+| Food | An orange square, placed on a random free cell and never overlapping the snake |
+| Difficulty | Higher difficulty means a faster snake: Easy 220 ms, Normal 150 ms, Hard 100 ms, Insane 60 ms per cell; switching mid-game applies immediately and the hint line shows the current per-cell timing |
+| Loss | Head hits a wall, or head hits the snake's own body → game over, with the overlay naming the reason and showing the final score |
+| Win | The snake fills every cell → the game ends as a win, and no further food is spawned |
+| Controls | Arrow keys or WASD to turn, Space to pause/resume; on touch, swipe to turn and tap to pause; 180° reversals are forbidden |
+| Languages | The interface ships in **English (default)**, 简体中文, Français, Русский and 日本語, with a switcher row under the buttons. Switching re-labels everything instantly and the choice is remembered; an unknown or missing stored value falls back to English |
+| Status | Idle, paused and game-over states all show an overlay on the board; the status line uses `aria-live="polite"` and every button is keyboard reachable |
 
-转向要能缓冲：连续快速按两次方向键（例如先上后左）时两次都生效，不能因为每个 tick 只取一次方向而丢掉第二次输入。
+Turning must be buffered: pressing two direction keys in quick succession (up then left, say) must apply both, rather than dropping the second because each tick reads only one direction.
 
-## 工作流程
+## Workflow
 
-1. **先定落点**。默认在当前工作目录生成 `index.html`；用户给了目录或文件名就按用户的来。目标文件已存在时先读它，再决定覆盖、合并还是另存，不要静默丢弃用户已有内容。
-2. **以 `assets/snake-game.html` 为基线**。把它复制成交付文件，再按用户要求做增量调整。不要从零重写，也不要把它整体内联进回复。
-3. **按需改动**。除用户明确要求的改动外，其余保持基线行为。基线只有四个改动点：
-   - `COLORS`：棋盘底色、网格线、外框、食物、蛇身、蛇头、箭头、眼睛的颜色。
-   - `DIFFICULTIES`：难度档位数组，`stepMs` 越小蛇越快；增删档位后按钮自动循环，默认档位由 `difficultyIndex` 决定，档位标签可换成英文或更多档位。
-   - `new SnakeGame(canvas, { cols, rows, cell, difficultyIndex })`：棋盘格数与单格像素；画布尺寸按格数在运行时重算，不必手改 HTML 里的 `width`/`height` 属性。
-   - 输入层：`KEY_DIRECTIONS` 是方向键与 WASD 的映射，暂停键与「未开局按键即开始」在 `keydown` 处理里。
-   保留每帧最多补 4 步的上限：去掉它以后，标签页切回来会一次性补完几十步、直接撞墙。
-4. **自检后再交付**。按下面清单逐条核对，能打开浏览器就实际看一眼，不要只凭代码推断能跑。基线把 `window.SnakeGame`、`window.SNAKE_DIFFICULTIES` 和当前实例 `window.snakeGame` 暴露到全局，可在浏览器控制台直接 `snakeGame.tick()`、`snakeGame.setDifficulty('insane')`、`snakeGame.render()` 驱动和检查局面。
-5. **交付说明**。给出文件路径、打开方式（双击，或在文件所在目录运行 `python -m http.server 8000` 后访问 `http://localhost:8000/`）、玩法与本次改动。
+1. **Decide where the file goes.** Default to writing `index.html` in the current working directory; if the user gave a directory or file name, use theirs. If the target file already exists, read it first and then decide whether to overwrite, merge or save alongside — never silently discard what the user already had.
+2. **Start from `assets/snake-game.html`.** Copy it to the delivery path and make incremental changes. Do not rewrite it from scratch, and do not paste it into the reply.
+3. **Change only what was asked.** Keep every other baseline behaviour intact. The baseline has five change points:
+   - `COLORS`: board, grid lines, border, food, body, head, arrows, eyes.
+   - `DIFFICULTIES`: the level list; smaller `stepMs` means faster. The button cycles whatever levels exist, the default level comes from `difficultyIndex`, and level names live in the `difficulty` map of each language in `MESSAGES`.
+   - `MESSAGES` and `LANGUAGES`: all interface wording, per language, plus the switcher row — add a sixth language by adding one `LANGUAGES` entry and one `MESSAGES` entry.
+   - `new SnakeGame(canvas, { cols, rows, cell, difficultyIndex })`: board cells and cell pixel size; the canvas is resized from the cell count at runtime, so the HTML `width`/`height` attributes need no hand-editing.
+   - Input layer: `KEY_DIRECTIONS` maps arrow keys and WASD; the pause key and "an arrow key starts the game when idle" live in the `keydown` handler.
+   Keep the cap of at most 4 catch-up steps per frame: remove it and the snake covers dozens of cells in one go — straight into a wall — when the user returns to the tab.
+4. **Self-check before delivering.** Walk the checklist below item by item, and actually look at the page in a browser when you can rather than inferring from the code that it runs. The baseline exposes `window.SnakeGame`, `window.SNAKE_DIFFICULTIES`, `window.SNAKE_LANGUAGES` and the live instance `window.snakeGame`, so you can drive and inspect a position from the browser console with `snakeGame.tick()`, `snakeGame.setDifficulty('insane')`, `snakeGame.setLanguage('ja')` or `snakeGame.render()`.
+5. **Explain the hand-off.** Give the file path, how to open it (double-click, or run `python -m http.server 8000` in that directory and visit `http://localhost:8000/`), how to play, and what changed.
 
-## 验收清单
+## Acceptance checklist
 
-结构与依赖：
+Structure and dependencies:
 
-- 单个 HTML 文件，`<script>` 与 `<style>` 内联，没有 `src`、`href`、`fetch`、CDN 或字体外链。
-- 断网双击打开可正常游玩；浏览器控制台无报错。
+- One HTML file with `<script>` and `<style>` inline; no `src`, no `href`, no `fetch`, no CDN, no web fonts.
+- Plays offline on double-click, with a clean browser console.
 
-功能（每条都要在页面上验证，不要只看代码）：
+Behaviour (verify each one on the page, not just in the code):
 
-- 点 `开始游戏` 后蛇按当前难度速度前进。
-- 点 `选择难度` 循环切换档位；同一棋盘下地狱明显快于简单，切换后立即生效。
-- 吃到橙色食物：得分 +1、蛇变长一节、食物在新位置重新出现。
-- 蛇头撞墙 → 显示失败原因，`开始游戏` 变为 `重新开始`，可再次开局。
-- 蛇头撞到自己身体 → 同样判负；紧贴蛇尾的格子在被让出时可以进入，不能误判。
-- 蛇占满全部格子 → 判通关，不再生成食物。
-- 反向键无效；快速连按两个合法方向键时两次转向都生效。
-- 空格暂停后画面静止、蛇不前进，再按空格继续。
-- 标签页切走再切回时不会瞬间连走几十格撞墙。
-- 刷新页面后 `历史最高分` 仍为之前的最好成绩（浏览器限制持久化时降级为不崩溃即可）。
-- 窄屏（约 360 px 宽）下棋盘不溢出、按钮不错位、可滑动转向。
+- Pressing `Start Game` moves the snake at the current difficulty's speed.
+- Pressing `Difficulty` cycles the levels; on the same board Insane is clearly faster than Easy, and a switch takes effect immediately.
+- Eating the orange square adds 1 to the score, grows the snake by one segment, and respawns the food elsewhere.
+- Head hits a wall → the reason is shown, the button becomes `Restart`, and a new game can be started.
+- Head hits the body → same loss path; the cell the tail has just vacated must remain enterable, with no false positive.
+- The snake fills every cell → judged a win, and no further food is spawned.
+- Reversal keys do nothing; two legal direction keys pressed in quick succession both take effect.
+- Space freezes the board and the snake stops moving; pressing it again resumes.
+- Switching the language relabels the score line, both buttons, the overlay, the hint line and the page title, and the choice survives a reload; a stored value that is not a known language falls back to English.
+- Leaving the tab and coming back does not make the snake cross dozens of cells and crash.
+- After a refresh, `Best` still shows the previous record (degrading to "no crash" is acceptable where the browser blocks persistence).
+- On a narrow screen (about 360 px wide) the board does not overflow, the buttons stay aligned, and swiping still turns the snake.
 
-视觉：与顶部计分条、青绿网格棋盘、橙色食物、暗红带箭头蛇身、紫色蛇头、下方两个按钮的整体观感一致。
+Visuals: the overall look matches the reference — score line on top, teal grid board, orange food, dark red body segments carrying arrows, purple head, and the two buttons below.
 
-## 资源
+## Resources
 
-- `assets/snake-game.html`：可直接运行的完整基线游戏，含棋盘渲染、计分、难度档位、暂停、移动端操作与无障碍提示。作为复制起点使用，不当作需要通读的说明文档。
+- `assets/snake-game.html`: the complete runnable baseline game — board rendering, scoring, difficulty levels, five languages, pause, touch controls and accessibility hints. Use it as a starting point to copy, not as prose to read through.
 
-## 边界
+## Boundaries
 
-- 暂不支持网页抓取、PDF 与 Anki 相关需求；用户提出这类需求时直接说明不在本 Skill 范围内。
-- 不引入框架、打包器与后端：需要联机对战或排行榜时，先向用户确认，再另行设计。
-- 不修改用户的浏览器设置，不代替用户执行安装。
+- Web scraping, PDF and Anki requests are out of scope; say so plainly when a user asks for them.
+- Do not pull in frameworks, bundlers or a backend: for online multiplayer or a leaderboard, confirm with the user first and design it separately.
+- Do not change the user's browser settings, and do not run installs on their behalf.

@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Snake-game Skill</title>
+<style>
+  :root { --bg: #f7f8fa; --card: #fff; --text: #1f2933; --muted: #5b6472;
+          --line: #e2e6ec; --accent: #0f766e; --link: #2f5fd0; --code: #f2f4f7; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font-family: "Segoe UI", "Microsoft YaHei", "Yu Gothic UI", "Meiryo", system-ui, -apple-system, sans-serif;
+         font-size: 16px; line-height: 1.7; }
+  header { position: sticky; top: 0; z-index: 5; background: rgba(255,255,255,.96);
+           border-bottom: 1px solid var(--line); }
+  .bar { max-width: 900px; margin: 0 auto; padding: 10px 20px;
+         display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; justify-content: space-between; }
+  .brand { font-weight: 700; color: var(--accent); }
+  .languages { display: flex; flex-wrap: wrap; gap: 2px 4px; align-items: center; }
+  .languages button { min-width: 0; padding: 3px 7px; font: inherit; font-size: 14px;
+                      color: var(--link); background: none; border: 0; border-radius: 5px; cursor: pointer; }
+  .languages button:hover { background: #eaeefb; text-decoration: underline; }
+  .languages button[aria-current="true"] { color: var(--text); font-weight: 700; background: #eef2f7; cursor: default; }
+  .languages button[aria-current="true"]:hover { background: #eef2f7; text-decoration: none; }
+  .languages span { color: #aab2bd; }
+  main { max-width: 900px; margin: 0 auto; padding: 8px 20px 40px; }
+  article.doc { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+                padding: 8px 28px 32px; margin-top: 20px; }
+  article[hidden] { display: none; }
+  h1 { font-size: 26px; margin: 20px 0 12px; }
+  h2 { font-size: 21px; margin: 30px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  h3 { font-size: 17px; margin: 22px 0 8px; }
+  a { color: var(--link); }
+  code { background: var(--code); padding: 1px 5px; border-radius: 4px; font-size: .9em;
+         font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  pre { background: var(--code); border: 1px solid var(--line); border-radius: 8px;
+        padding: 12px 14px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 15px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: #f0f3f7; }
+  img { max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; }
+  blockquote { margin: 12px 0; padding: 2px 14px; border-left: 3px solid var(--accent); color: var(--muted); }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 26px 0; }
+  footer { max-width: 900px; margin: 0 auto; padding: 0 20px 40px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <span class="brand">Snake-game Skill</span>
+    <nav class="languages" id="languages" aria-label="Language">
+      <button type="button" data-lang="en" aria-current="true">English</button>
+      <button type="button" data-lang="zh-CN" aria-current="false">简体中文</button>
+      <button type="button" data-lang="fr" aria-current="false">Français</button>
+      <button type="button" data-lang="ru" aria-current="false">Русский</button>
+      <button type="button" data-lang="ja" aria-current="false">日本語</button>
+    </nav>
+  </div>
+</header>
+<main>
+<article class="doc" data-lang="en" data-title="Snake-game Skill" hidden>
+<h1>Snake-game Skill</h1>
+<p>An open-source Agent Skill that makes an AI hand you a snake game <strong>you can play the moment it opens</strong>.</p>
+<p><img alt="Snake game preview" src="docs/preview.png" /></p>
+<h2>1. What problem does this solve?</h2>
+<p>Writing a snake game that "just works when you double-click it" means getting a long list of fiddly details right at the same time: the timing loop and difficulty speeds, three different endings (hit a wall / hit yourself / fill the board), direction keys that lose input when tapped quickly, a snake that teleports into a wall after you switch tabs and come back, high-score persistence, touch controls, and external assets that break the page the moment you go offline. Ask an AI to generate it from scratch and the result usually looks playable while hiding real bugs.</p>
+<p>This project freezes a <strong>complete, automated-test-verified implementation</strong> into a skill asset, and writes the delivery spec plus an acceptance checklist into <code>SKILL.md</code>: instead of writing from scratch, the AI copies the baseline, changes only what the user asked for, and self-checks item by item before delivering.</p>
+<ul>
+<li><strong>For users</strong>: no environment to install, no build step — you get one <code>index.html</code> that plays on double-click. Customisation touches a handful of documented points and nothing else regresses.</li>
+<li><strong>For the AI</strong>: the bar for "done" is that the user can open the page and actually play it — the spec, the end conditions and the checks are written into the skill instead of being improvised.</li>
+<li><strong>Not for</strong>: web scraping, PDF or Anki work; and anything needing a backend, online multiplayer or a leaderboard (the skill says so up front; that needs a separate design).</li>
+</ul>
+<h2>2. Main features</h2>
+<h3>2.1 Skill capabilities</h3>
+<ul>
+<li><strong>Fixed delivery spec</strong>: score line on top, grid board in the middle, two buttons below, snake/food appearance, difficulty and speed, end conditions, controls and status messages — each written into the spec table in <code>SKILL.md</code>.</li>
+<li><strong>Five-step workflow</strong>: pick the output path → copy <code>assets/snake-game.html</code> as the baseline → change only what the user named → run the acceptance checklist → report path, how to open it, and what changed.</li>
+<li><strong>Acceptance checklist</strong>: three groups checked item by item — structure (single file, no external links, clean console), behaviour (eating, the three endings, turning, pausing, high score, narrow screens) and visuals.</li>
+<li><strong>Five documented change points</strong>: <code>COLORS</code>, <code>DIFFICULTIES</code>, <code>MESSAGES</code> (all UI wording and translations), <code>new SnakeGame(canvas, { cols, rows, cell, difficultyIndex })</code>, and the input layer (<code>KEY_DIRECTIONS</code> and the <code>keydown</code> handler).</li>
+<li><strong>Boundaries</strong>: no scraping / PDF / Anki; no frameworks, bundlers or backends.</li>
+</ul>
+<h3>2.2 The delivered game (measured on the baseline)</h3>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Feature</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Delivery form</td>
+<td>A single self-contained HTML file, HTML/CSS/JS fully inline, <strong>0 external references</strong>, no build step, plays offline on double-click</td>
+</tr>
+<tr>
+<td>Board</td>
+<td>20 × 20 cells at 24 px by default (480 × 480 internally, scaled by <code>devicePixelRatio</code> to stay crisp), light teal background + white grid lines + dark border, scales down to narrow viewports</td>
+</tr>
+<tr>
+<td>Score</td>
+<td>Top line <code>Score: N　Best: M</code>, updated live; the best score is written to <code>localStorage</code> (key <code>snake-game:best-score</code>) when a game ends and survives a refresh; degrades without crashing when storage is unavailable</td>
+</tr>
+<tr>
+<td>Difficulty</td>
+<td>4 levels, faster as difficulty rises: Easy 220, Normal 150, Hard 100, Insane 60 ms per cell, defaulting to Normal; switching mid-game applies immediately and the hint line shows the current speed</td>
+</tr>
+<tr>
+<td>Languages</td>
+<td>The UI ships in <strong>English (default)</strong>, 简体中文, Français, Русский and 日本語. One click re-labels the whole page instantly, and the choice is remembered in <code>localStorage</code> (key <code>snake-game:language</code>)</td>
+</tr>
+<tr>
+<td>Endings</td>
+<td>Head hits a wall → loss; head hits its own body → loss (the overlay names the reason and the final score); snake fills every cell → win, and no further food spawns</td>
+</tr>
+<tr>
+<td>Turning</td>
+<td>Up to 2 turns are buffered (quick double-taps are not lost), 180° reversals are rejected, and the cell the tail has just vacated can be entered</td>
+</tr>
+<tr>
+<td>Controls</td>
+<td>Arrow keys / WASD to turn, Space to pause or resume, an arrow key starts a game from idle; on touch, swipe to turn and tap to pause; a focused button does not swallow Space</td>
+</tr>
+<tr>
+<td>Stability</td>
+<td>At most 4 catch-up steps per frame, so returning to a backgrounded tab never teleports the snake into a wall</td>
+</tr>
+<tr>
+<td>Accessibility</td>
+<td>Status line announced via <code>role="status" aria-live="polite"</code>, keyboard-focusable buttons, labelled canvas</td>
+</tr>
+<tr>
+<td>Debug hooks</td>
+<td><code>window.snakeGame</code> (live instance), <code>window.SnakeGame</code> (class), <code>window.SNAKE_DIFFICULTIES</code>, <code>window.SNAKE_LANGUAGES</code></td>
+</tr>
+</tbody>
+</table>
+<h2>3. Installation</h2>
+<p><strong>Requirements: none.</strong> The skill itself is plain text plus one HTML file; playing only needs a modern browser (Chrome / Edge / Firefox / Safari). Optional: any Python 3, if you want to serve the page over HTTP.</p>
+<h3>Option A: install as an Agent skill</h3>
+<ol>
+<li>Copy the whole skill directory into your agent's skills directory:</li>
+</ol>
+<p><code>bash
+   # The exact target depends on your host; Codex-style tools read skill
+   # packages from a skills directory, for example.
+   cp -r skills/snake-game &lt;your-skills-dir&gt;/snake-game</code></p>
+<ol start="2">
+<li>Reload (or restart) the host so it discovers the new skill.</li>
+<li>Invoke it explicitly, or just describe what you want and let the skill trigger itself:</li>
+</ol>
+<p><code>text
+   $snake-game generate a snake game I can open and play right away</code></p>
+<h3>Option B: no installation</h3>
+<p>The baseline file inside the skill directory <em>is</em> the complete game — copy it, or open it where it is:</p>
+<pre><code class="language-bash">skills/snake-game/assets/snake-game.html
+</code></pre>
+<h3>Option C: wire it into any AI manually</h3>
+<p>Hand <code>SKILL.md</code> to the model as instructions and <code>assets/snake-game.html</code> as the template. No specific host required.</p>
+<h3>Optional: check that the install is complete</h3>
+<p>The package follows the Agent Skill layout, so you can validate it with the official skill-creator script (bring your own copy of the script):</p>
+<pre><code class="language-bash">python quick_validate.py skills/snake-game
+# expected output: Skill is valid!
+</code></pre>
+<p>The directory should contain <code>SKILL.md</code>, <code>agents/openai.yaml</code> and <code>assets/snake-game.html</code>, with no stray <code>scripts/</code>.</p>
+<h2>4. Usage</h2>
+<h3>4.1 Generate or customise with the skill</h3>
+<pre><code class="language-text">$snake-game generate a snake game I can open and play right away
+Adjust the snake game: 16×16 board, 3 difficulty levels, dark theme
+Neon colours, bigger cells, 5 difficulty levels, press P to pause
+</code></pre>
+<p>The skill changes only what you name and keeps the rest of the baseline behaviour; the hand-off tells you the file path, how to open it, how to play, and what changed.</p>
+<h3>4.2 Play the baseline directly</h3>
+<pre><code class="language-bash"># Option 1: double-click it — no environment needed
+skills/snake-game/assets/snake-game.html
+
+# Option 2: serve it over HTTP
+cd skills/snake-game/assets
+python -m http.server 8000
+# then open http://localhost:8000/snake-game.html
+</code></pre>
+<p>How to play: press <code>Start Game</code>, steer with the <strong>arrow keys / WASD</strong>, press <strong>Space</strong> to pause or resume, and click <code>Difficulty: Normal</code> to cycle through the levels (you can switch at any time, including mid-game). Use the language row under the buttons to switch the interface between English, 简体中文, Français, Русский and 日本語 — the page starts in English and remembers your choice.</p>
+<h3>4.3 What to change, and where</h3>
+<table>
+<thead>
+<tr>
+<th>What you want to change</th>
+<th>Where to change it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Board size and cell pixel size</td>
+<td><code>new SnakeGame(canvas, { cols, rows, cell, difficultyIndex })</code> — the canvas is resized from the cell count at runtime, so the HTML <code>width</code>/<code>height</code> attributes need no hand-editing</td>
+</tr>
+<tr>
+<td>Difficulty levels, speeds and their names</td>
+<td><code>DIFFICULTIES</code> (ids and <code>stepMs</code>; smaller is faster) plus the <code>difficulty</code> map inside every language of <code>MESSAGES</code> — the button cycles whatever levels exist, and a missing name falls back to the level id</td>
+</tr>
+<tr>
+<td>Colours</td>
+<td><code>COLORS</code> (board, grid lines, border, food, body, head, arrows, eyes)</td>
+</tr>
+<tr>
+<td>UI wording, or adding a sixth language</td>
+<td><code>MESSAGES</code> for the text and <code>LANGUAGES</code> for the switcher row</td>
+</tr>
+<tr>
+<td>Arrow-key mapping and the pause key</td>
+<td><code>KEY_DIRECTIONS</code> and the <code>keydown</code> handler</td>
+</tr>
+</tbody>
+</table>
+<h3>4.4 Debug in the browser console</h3>
+<pre><code class="language-js">snakeGame.setDifficulty('insane'); // jump to the fastest level (index also accepted)
+snakeGame.setLanguage('ja');       // switch the UI language
+snakeGame.tick();                  // advance one step by hand
+snakeGame.snapshot();              // state, score, snake coordinates, speed, language
+snakeGame.render();                // repaint the current position
+snakeGame.start();                 // start a fresh game
+</code></pre>
+<h2>5. Input / output examples</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>User input</th>
+<th>Skill output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>"Make me a snake game I can open and play"</td>
+<td>Copies the baseline to <code>index.html</code> with the spec untouched, plus how to open it and how to play</td>
+</tr>
+<tr>
+<td>2</td>
+<td>"16×16 board, 3 difficulty levels, dark theme" (works in any language)</td>
+<td>The same page with 16 rows × 16 columns, 3 speeds (200 / 120 / 70 ms), a dark background and an emerald snake; everything else unchanged</td>
+</tr>
+<tr>
+<td>3</td>
+<td>"Neon colours, bigger cells, 5 difficulty levels, P to pause"</td>
+<td>A 12×12 large-cell board, 5 difficulty levels, a neon palette, P as the pause key (Space still works), and the hint text updated to match</td>
+</tr>
+<tr>
+<td>4</td>
+<td>"Turn the difficulty control into a dropdown and add a restart button"</td>
+<td>The difficulty control and buttons are replaced on the baseline; the rest of the spec stays as it is</td>
+</tr>
+<tr>
+<td>5</td>
+<td>"Scrape a web page for me / produce a PDF / build an Anki deck"</td>
+<td>Explains that this is outside the skill's scope and does not produce a game page</td>
+</tr>
+</tbody>
+</table>
+<p>A typical result for request type 1:</p>
+<pre><code class="language-text">index.html        # one self-contained file, double-click to play (~830 lines, 0 external dependencies)
+</code></pre>
+<pre><code class="language-text">Created index.html (20×20 board, default difficulty &quot;Normal&quot;).
+To open: double-click it, or run python -m http.server 8000 in this directory and visit http://localhost:8000/
+Controls: arrow keys / WASD to turn, Space to pause, click &quot;Difficulty&quot; to cycle levels (Easy 220 → Insane 60 ms per cell).
+The interface ships in English by default and switches to 简体中文, Français, Русский or 日本語 from the language row.
+No spec changes were made; this matches the baseline.
+</code></pre>
+<p>Request types 2 and 3 only touch the change points listed under "What to change, and where", after which the acceptance checklist is walked through again.</p>
+<h2>Repository layout</h2>
+<pre><code class="language-text">README.md                  # this file (English, the default)
+README.zh-CN.md            # 简体中文
+README.fr.md               # Français
+README.ru.md               # Русский
+README.ja.md               # 日本語
+LICENSE                    # MIT licence
+skills/snake-game/
+├── SKILL.md               # English: delivery spec, workflow, acceptance checklist, boundaries
+├── SKILL.zh-CN.md         # 简体中文
+├── SKILL.fr.md            # Français
+├── SKILL.ru.md            # Русский
+├── SKILL.ja.md            # 日本語
+├── agents/openai.yaml     # UI metadata: display_name / short_description / default_prompt
+└── assets/snake-game.html # the complete runnable baseline game (rendering, score, difficulty, languages, pause, touch, accessibility)
+docs/preview.png           # preview above (English UI, real browser render)
+docs/preview.zh-CN.png     # the same board with the Chinese UI
+</code></pre>
+<p>There is no <code>scripts/</code> inside the skill directory: this task does not need one, and the baseline HTML is itself the template you copy.</p>
+<h2>Verification</h2>
+<ul>
+<li><code>SKILL.md</code> and <code>agents/openai.yaml</code> pass the official skill-creator <code>quick_validate.py</code> (output: <code>Skill is valid!</code>) and also a stricter structural check: main-file line and character budgets, referenced-path existence, metadata fields and empty-directory checks all report 0 errors.</li>
+<li>The game logic was exercised with 24 assertions in a real Chromium engine (headless Edge) and 87 assertions under Node with a DOM stub, covering: movement and eating, wall collision, self collision, winning by filling the board, the difficulty-to-speed mapping, reversal rejection, turn buffering, pause and resume, high-score persistence with a safe fallback when storage is unavailable, the catch-up cap after a long stall, and the canvas contents and colours.</li>
+<li>The language layer is covered too: the default is English, all five languages render their own labels, switching is instant, the choice survives a reload, and an unknown stored value falls back to English.</li>
+<li>Request types 1, 2 and 3 in the table above were actually generated and re-tested end to end; the preview images are real browser renders.</li>
+<li>Not verified: <code>localStorage</code> behaviour under <code>file://</code> varies between browsers (the code degrades instead of throwing).</li>
+</ul>
+<h2>License</h2>
+<p>Released under the <a href="LICENSE">MIT License</a>: free to use, modify, distribute and use commercially, as long as the copyright and licence notice are kept.</p>
+<pre><code class="language-text">Copyright (c) 2026 Snake-game Skill contributors
+</code></pre>
+<p>To put your own name on it, edit that one line in <code>LICENSE</code>.</p>
+</article>
+<article class="doc" data-lang="zh-CN" data-title="Snake-game Skill — 简体中文" hidden>
+<h1>Snake-game Skill</h1>
+<p>一个可开源的 Agent Skill：让 AI 交付一个<strong>打开就能玩</strong>的贪吃蛇网页游戏。</p>
+<p><img alt="贪吃蛇游戏预览" src="docs/preview.zh-CN.png" /></p>
+<h2>1. 项目解决什么问题</h2>
+<p>想要一个「双击就能玩」的贪吃蛇网页，从零写要同时处理一堆容易翻车的细节：计时循环与难度速度、撞墙／撞自己／填满棋盘三种终局、快速连按方向键丢输入、切走标签页再回来蛇直接暴走撞墙、最高分持久化、移动端操作、以及外链资源导致断网打不开。让 AI 每次从零生成，结果往往看起来能跑、实际有坑。</p>
+<p>本项目把一份<strong>已经跑通并被自动化测试覆盖</strong>的完整实现固化成技能资产，把交付规格和验收清单写进 <code>SKILL.md</code>：AI 不再从零写，而是复制基线、只改用户点名的部分、按清单逐条自检后交付。</p>
+<ul>
+<li><strong>对使用者</strong>：不用装环境、不用构建，拿到一个 <code>index.html</code> 双击即玩；改版只动四个改动点，其余行为不回退。</li>
+<li><strong>对 AI</strong>：交付标准是「用户能打开并真的玩起来」——规格、终局判定、验收项都写死在技能里，不靠临场发挥。</li>
+<li><strong>不适用</strong>：网页抓取、PDF、Anki；以及需要后端、联机对战或排行榜的场景（技能会先说明，需另行设计）。</li>
+</ul>
+<h2>2. 主要功能</h2>
+<h3>2.1 技能能力</h3>
+<ul>
+<li><strong>固定交付规格</strong>：顶部计分条、中间网格棋盘、下方两个按钮、蛇／食物外观、难度与速度、终局判定、操作方式、状态提示，逐条写进 <code>SKILL.md</code> 的规格表。</li>
+<li><strong>五步工作流程</strong>：定落点 → 复制 <code>assets/snake-game.html</code> 为基线 → 只改用户点名项 → 按验收清单自检 → 说明路径、打开方式与本次改动。</li>
+<li><strong>验收清单</strong>：结构（单文件、无外链、控制台无报错）、功能（吃食物、三类终局、转向、暂停、最高分、窄屏）、视觉三组逐条核对。</li>
+<li><strong>五个改动点</strong>：<code>COLORS</code>（配色）、<code>DIFFICULTIES</code>（档位与速度）、<code>MESSAGES</code> 与 <code>LANGUAGES</code>（界面文案与语言行）、<code>new SnakeGame(canvas, { cols, rows, cell, difficultyIndex })</code>（棋盘与默认档位）、输入层（<code>KEY_DIRECTIONS</code> 与 <code>keydown</code> 处理）。</li>
+<li><strong>边界</strong>：不做网页抓取／PDF／Anki；不引入框架、打包器与后端。</li>
+</ul>
+<h3>2.2 交付游戏（基线实测特性）</h3>
+<table>
+<thead>
+<tr>
+<th>分类</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>交付形态</td>
+<td>单个自包含 HTML 文件，HTML/CSS/JS 全内联，<strong>0 个外部引用</strong>，无构建步骤，断网双击即玩</td>
+</tr>
+<tr>
+<td>棋盘</td>
+<td>默认 20 × 20 格、每格 24 px（内部 480 × 480，按 <code>devicePixelRatio</code> 缩放保证清晰），浅青绿底 + 白色网格线 + 深色外框，窄屏按视口宽度自适应</td>
+</tr>
+<tr>
+<td>计分</td>
+<td>顶部 <code>得分: N　历史最高分: M</code> 实时更新；最高分在游戏结束时写入 <code>localStorage</code>（键 <code>snake-game:best-score</code>），刷新后保留；存储被禁用时降级为不崩溃</td>
+</tr>
+<tr>
+<td>难度</td>
+<td>4 档，难度越高越快：简单 220、普通 150、困难 100、地狱 60 毫秒／格，默认「普通」，游戏中切换立即生效并在提示行显示当前速度</td>
+</tr>
+<tr>
+<td>语言</td>
+<td>界面内置 <strong>英文（默认）</strong>、简体中文、Français、Русский、日本語 五种语言；点按钮下方那一行即可整页即时切换，选择写入 <code>localStorage</code>（键 <code>snake-game:language</code>），刷新后保留，遇到不认识的语言代码回退英文</td>
+</tr>
+<tr>
+<td>终局</td>
+<td>蛇头撞墙判负、撞到自己判负（覆盖层给出原因与最终得分）、蛇填满全部格子判通关且不再生成食物</td>
+</tr>
+<tr>
+<td>转向</td>
+<td>最多缓冲 2 次转向（快速连按不丢输入）、禁止 180° 反向掉头、贴着蛇尾的格子在被让出时可正常进入</td>
+</tr>
+<tr>
+<td>操作</td>
+<td>方向键／WASD 转向，空格暂停／继续，未开局时按方向键直接开始；移动端滑动转向、轻点暂停；焦点在按钮上时不会误触发暂停</td>
+</tr>
+<tr>
+<td>稳定性</td>
+<td>每帧最多补 4 步，切走标签页再回来不会瞬间连走几十格撞墙</td>
+</tr>
+<tr>
+<td>无障碍</td>
+<td>状态行 <code>role="status" aria-live="polite"</code> 播报、按钮可键盘聚焦、画布带 <code>aria-label</code></td>
+</tr>
+<tr>
+<td>调试钩子</td>
+<td><code>window.snakeGame</code>（当前实例）、<code>window.SnakeGame</code>（类）、<code>window.SNAKE_DIFFICULTIES</code>（档位表）、<code>window.SNAKE_LANGUAGES</code>（语言表）</td>
+</tr>
+</tbody>
+</table>
+<h2>3. 安装方法</h2>
+<p><strong>前置要求：无。</strong> 技能本体是纯文本 + 一个 HTML 文件；游玩只需要现代浏览器（Chrome / Edge / Firefox / Safari）。可选：任意 Python 3，用于起本地静态服务。</p>
+<h3>方式 A：安装为 Agent 技能</h3>
+<ol>
+<li>把整个技能目录复制到你所用 Agent 的技能目录下：</li>
+</ol>
+<p><code>bash
+   # 目标目录以宿主文档为准，例如 Codex 风格的工具读取 skills 目录下的技能包
+   cp -r skills/snake-game &lt;你的技能目录&gt;/snake-game</code></p>
+<ol start="2">
+<li>重新加载（或重启）宿主，让它发现新技能。</li>
+<li>显式调用，或直接用自然语言描述需求让技能自动触发：</li>
+</ol>
+<p><code>text
+   $snake-game 生成一个可以直接打开的贪吃蛇网页游戏</code></p>
+<h3>方式 B：不安装，直接用</h3>
+<p>技能目录里的基线文件本身就是完整游戏，复制或直接打开都能玩：</p>
+<pre><code class="language-bash">skills/snake-game/assets/snake-game.html
+</code></pre>
+<h3>方式 C：手动接入任意 AI</h3>
+<p>把 <code>SKILL.md</code> 当作指令、<code>assets/snake-game.html</code> 当作模板交给模型即可，不依赖特定宿主。</p>
+<h3>可选：校验安装是否完整</h3>
+<p>技能包遵循 Agent Skill 规范，可用官方 skill-creator 的校验脚本自检（脚本需自备）：</p>
+<pre><code class="language-bash">python quick_validate.py skills/snake-game
+# 期望输出：Skill is valid!
+</code></pre>
+<p>目录应包含：<code>SKILL.md</code>、<code>agents/openai.yaml</code>、<code>assets/snake-game.html</code>，且没有多余的 <code>scripts/</code>。</p>
+<h2>4. 使用方法</h2>
+<h3>4.1 让技能生成或改版</h3>
+<pre><code class="language-text">$snake-game 生成一个可以直接打开的贪吃蛇网页游戏
+帮我调整贪吃蛇：16×16 棋盘，难度分 3 档，做成暗色主题
+霓虹配色，格子大一点，难度来 5 档，按 P 暂停
+</code></pre>
+<p>技能只改你点名的部分，其余保持基线行为；交付时会给出文件路径、打开方式、玩法与本次改动。</p>
+<h3>4.2 直接玩基线</h3>
+<pre><code class="language-bash"># 方式一：双击打开，无需任何环境
+skills/snake-game/assets/snake-game.html
+
+# 方式二：起一个本地静态服务
+cd skills/snake-game/assets
+python -m http.server 8000
+# 浏览器打开 http://localhost:8000/snake-game.html
+</code></pre>
+<p>玩法：点 <code>开始游戏</code> 后，用 <strong>方向键 / WASD</strong> 转向，<strong>空格</strong> 暂停或继续，点 <code>选择难度：普通</code> 循环切换档位（也可以开局后随时切）。界面默认英文，点按钮下方的语言行可在 English / 简体中文 / Français / Русский / 日本語 之间即时切换，选择会被记住。</p>
+<h3>4.3 想改什么，改哪里</h3>
+<table>
+<thead>
+<tr>
+<th>想改的东西</th>
+<th>改动位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>棋盘格数与单格像素</td>
+<td><code>new SnakeGame(canvas, { cols, rows, cell, difficultyIndex })</code>（画布尺寸运行时按格数重算，无需手改 HTML 的 <code>width</code>/<code>height</code>）</td>
+</tr>
+<tr>
+<td>难度档位、速度、档位名称</td>
+<td><code>DIFFICULTIES</code> 数组，<code>stepMs</code> 越小越快；增删档位后按钮自动循环</td>
+</tr>
+<tr>
+<td>配色</td>
+<td><code>COLORS</code>（棋盘、网格线、外框、食物、蛇身、蛇头、箭头、眼睛）</td>
+</tr>
+<tr>
+<td>界面文案、增删语言</td>
+<td><code>MESSAGES</code>（各语言文案）与 <code>LANGUAGES</code>（语言行）；新增一门语言＝两边各加一条</td>
+</tr>
+<tr>
+<td>方向键映射、暂停键</td>
+<td><code>KEY_DIRECTIONS</code> 与 <code>keydown</code> 处理</td>
+</tr>
+</tbody>
+</table>
+<h3>4.4 在浏览器控制台调试</h3>
+<pre><code class="language-js">snakeGame.setDifficulty('insane'); // 切到最快档（也可传档位序号）
+snakeGame.setLanguage('ja');       // 切换界面语言
+snakeGame.tick();                  // 手动走一步
+snakeGame.snapshot();              // 查看状态、得分、蛇身坐标、当前速度
+snakeGame.render();                // 重绘当前局面
+snakeGame.start();                 // 重开一局
+</code></pre>
+<h2>5. 输入输出示例</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>用户输入</th>
+<th>技能输出</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>「做个贪吃蛇，打开就能玩」</td>
+<td>把基线复制为 <code>index.html</code>，规格一字不改，附带打开方式与玩法说明</td>
+</tr>
+<tr>
+<td>2</td>
+<td>「16×16 棋盘，难度分 3 档，做成暗色主题」（英文描述同样适用）</td>
+<td>同一页面改为 16 行 16 列、3 档速度（200 / 120 / 70 毫秒）、深色底 + 青绿蛇身，其余行为不变</td>
+</tr>
+<tr>
+<td>3</td>
+<td>「霓虹配色，格子大一点，难度来 5 档，按 P 暂停」</td>
+<td>12×12 大格棋盘、5 档难度、霓虹配色，暂停键改为 P（空格仍可用），提示行文案同步更新</td>
+</tr>
+<tr>
+<td>4</td>
+<td>「把难度改成下拉框，再加个重新开始按钮」</td>
+<td>在基线上替换难度控件与按钮，规格其余部分保持不变</td>
+</tr>
+<tr>
+<td>5</td>
+<td>「帮我抓取某网页数据 / 生成一份 PDF / 做一套 Anki 卡」</td>
+<td>说明不在本技能范围内，不产出游戏页面</td>
+</tr>
+</tbody>
+</table>
+<p>第 1 类请求的典型产出：</p>
+<pre><code class="language-text">index.html        # 单个自包含文件，双击即可游玩（约 830 行，0 个外部依赖）
+</code></pre>
+<pre><code class="language-text">已生成 index.html（20×20 棋盘，默认难度「普通」）。
+打开方式：直接双击；或在本目录运行 python -m http.server 8000 后访问 http://localhost:8000/
+玩法：方向键 / WASD 转向，空格暂停，点「选择难度」切换档位（简单 220 → 地狱 60 毫秒每格）。
+本次未改动任何规格，与基线一致。
+</code></pre>
+<p>第 2、3 类请求只会落在上面「想改什么，改哪里」的五个改动点上，改完再逐条过一遍验收清单。</p>
+<h2>目录结构</h2>
+<pre><code class="language-text">README.md                  # 本文件（英文，默认）
+README.zh-CN.md            # 简体中文
+README.fr.md               # Français
+README.ru.md               # Русский
+README.ja.md               # 日本語
+LICENSE                    # MIT 许可证
+skills/snake-game/
+├── SKILL.md               # 英文：交付规格、工作流程、验收清单、边界
+├── SKILL.zh-CN.md         # 简体中文
+├── SKILL.fr.md            # Français
+├── SKILL.ru.md            # Русский
+├── SKILL.ja.md            # 日本語
+├── agents/openai.yaml     # UI 元数据：display_name / short_description / default_prompt
+└── assets/snake-game.html # 完整可运行的基线游戏（831 行：渲染、计分、难度、五种语言、暂停、移动端、无障碍）
+docs/preview.png           # 英文界面预览图（真实浏览器渲染）
+docs/preview.zh-CN.png     # 中文界面预览图
+</code></pre>
+<p>技能目录内没有 <code>scripts/</code>：这个任务不需要脚本，基线 HTML 本身就是可复制的交付模板。</p>
+<h2>验证情况</h2>
+<ul>
+<li><code>SKILL.md</code> 与 <code>agents/openai.yaml</code> 通过官方 skill-creator 的 <code>quick_validate.py</code>（输出 <code>Skill is valid!</code>），并通过更严格的结构校验：主文件行数／字符预算、引用路径存在性、元数据字段、空目录检查全部 0 错误。</li>
+<li>游戏逻辑在真实 Chromium 内核（无头 Edge）跑 24 项断言，另用 Node + DOM 桩跑 87 项断言，覆盖：移动与吃食物、撞墙判负、撞到自己判负、填满棋盘通关、难度与速度映射、禁反向、转向缓冲、暂停与继续、最高分持久化与存储不可用降级、长卡顿不补步、画布绘制内容与配色。</li>
+<li>语言层同样覆盖：默认为英文，五种语言各自渲染自己的文案，切换即时生效，刷新后保留选择，存储里是不认识的语言代码时回退英文。</li>
+<li>上表第 1、2、3 类请求都实际生成过页面并逐项复测，全部通过；预览图即真实浏览器渲染结果。</li>
+<li>未验证项：<code>localStorage</code> 在 <code>file://</code> 下的表现随浏览器而异（代码已做降级，不会报错）。</li>
+</ul>
+<h2>许可证</h2>
+<p>本项目采用 <a href="LICENSE">MIT License</a>：可自由使用、修改、分发与商用，只需保留版权与许可声明。</p>
+<pre><code class="language-text">Copyright (c) 2026 Snake-game Skill contributors
+</code></pre>
+<p>想署自己的名字，改 <code>LICENSE</code> 里的这一行即可。</p>
+</article>
+<article class="doc" data-lang="fr" data-title="Snake-game Skill — Français" hidden>
+<h1>Skill Snake-game</h1>
+<p>Un Agent Skill open source qui permet à une IA de vous livrer un jeu de serpent <strong>jouable dès l'ouverture</strong>.</p>
+<p><img alt="Aperçu du jeu de serpent" src="docs/preview.png" /></p>
+<h2>1. Quel problème cela résout-il ?</h2>
+<p>Écrire un jeu de serpent qui « fonctionne dès le double-clic » suppose de réussir simultanément une longue liste de détails délicats : la boucle temporelle et les vitesses de difficulté, trois fins différentes (toucher un mur / se mordre soi-même / remplir la grille), des touches directionnelles qui perdent les saisies trop rapides, un serpent qui se téléporte dans un mur après un aller-retour vers un autre onglet, la persistance du meilleur score, les commandes tactiles et des ressources externes qui cassent la page dès que l'on passe hors ligne. Demandez à une IA de le générer de zéro : le résultat semble jouable tout en dissimulant de vrais bugs.</p>
+<p>Ce projet fige une <strong>implémentation complète, validée par des tests automatisés</strong> dans un actif de skill, et consigne la spécification de livraison ainsi qu'une liste de vérification d'acceptation dans <code>SKILL.md</code> : plutôt que d'écrire à partir de zéro, l'IA copie la base, ne modifie que ce que l'utilisateur a demandé et s'auto-contrôle point par point avant de livrer.</p>
+<ul>
+<li><strong>Pour les utilisateurs</strong> : aucun environnement à installer, aucune étape de compilation — vous obtenez un seul <code>index.html</code> qui se lance au double-clic. La personnalisation ne touche qu'une poignée de points documentés et rien d'autre ne régresse.</li>
+<li><strong>Pour l'IA</strong> : le critère du « terminé » est que l'utilisateur puisse ouvrir la page et y jouer réellement — la spécification, les conditions de fin et les vérifications sont écrites dans le skill au lieu d'être improvisées.</li>
+<li><strong>Pas pour</strong> : le scraping web, les travaux PDF ou Anki ; ni tout ce qui exige un back-end, du multijoueur en ligne ou un classement (le skill le dit d'emblée ; cela demande une conception séparée).</li>
+</ul>
+<h2>2. Fonctionnalités principales</h2>
+<h3>2.1 Capacités du skill</h3>
+<ul>
+<li><strong>Spécification de livraison figée</strong> : ligne de score en haut, grille de jeu au centre, deux boutons en dessous, apparence du serpent et de la nourriture, difficulté et vitesse, conditions de fin, commandes et messages d'état — chaque élément étant consigné dans le tableau de spécification de <code>SKILL.md</code>.</li>
+<li><strong>Flux de travail en cinq étapes</strong> : choisir le chemin de sortie → copier <code>assets/snake-game.html</code> comme base → ne modifier que ce que l'utilisateur a nommé → exécuter la liste de vérification d'acceptation → indiquer le chemin, la façon de l'ouvrir et ce qui a changé.</li>
+<li><strong>Liste de vérification d'acceptation</strong> : trois groupes contrôlés point par point — structure (fichier unique, aucun lien externe, console propre), comportement (manger, les trois fins, tourner, mettre en pause, meilleur score, écrans étroits) et visuel.</li>
+<li><strong>Cinq points de modification documentés</strong> : <code>COLORS</code>, <code>DIFFICULTIES</code>, <code>MESSAGES</code> (tous les libellés de l'interface et les traductions), <code>new SnakeGame(canvas, { cols, rows, cell, difficultyIndex })</code>, et la couche de saisie (<code>KEY_DIRECTIONS</code> et le gestionnaire <code>keydown</code>).</li>
+<li><strong>Limites</strong> : pas de scraping / PDF / Anki ; pas de frameworks, de bundlers ni de back-end.</li>
+</ul>
+<h3>2.2 Le jeu livré (mesuré sur la base)</h3>
+<table>
+<thead>
+<tr>
+<th>Domaine</th>
+<th>Fonctionnalité</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Forme de livraison</td>
+<td>Un fichier HTML unique et autonome, HTML/CSS/JS entièrement en ligne, <strong>0 référence externe</strong>, aucune étape de compilation, jouable hors ligne au double-clic</td>
+</tr>
+<tr>
+<td>Grille</td>
+<td>20 × 20 cellules de 24 px par défaut (480 × 480 en interne, mis à l'échelle par <code>devicePixelRatio</code> pour rester net), fond turquoise clair + lignes de grille blanches + bordure sombre, s'adapte aux fenêtres étroites</td>
+</tr>
+<tr>
+<td>Score</td>
+<td>Ligne supérieure <code>Score: N　Best: M</code>, mise à jour en direct ; le meilleur score est écrit dans <code>localStorage</code> (clé <code>snake-game:best-score</code>) à la fin d'une partie et survit à un rafraîchissement ; se dégrade sans planter lorsque le stockage est indisponible</td>
+</tr>
+<tr>
+<td>Difficulté</td>
+<td>4 niveaux, de plus en plus rapides : Facile 220, Normal 150, Difficile 100, Enfer 60 ms par cellule, avec Normal par défaut ; un changement en cours de partie s'applique immédiatement et la ligne d'indication affiche la vitesse actuelle</td>
+</tr>
+<tr>
+<td>Langues</td>
+<td>L'interface est livrée en <strong>anglais (par défaut)</strong>, 简体中文, Français, Русский et 日本語. Un clic réétiquette toute la page instantanément, et le choix est mémorisé dans <code>localStorage</code> (clé <code>snake-game:language</code>)</td>
+</tr>
+<tr>
+<td>Fins de partie</td>
+<td>La tête touche un mur → défaite ; la tête touche son propre corps → défaite (la surcouche indique la raison et le score final) ; le serpent remplit toutes les cellules → victoire, et aucune autre nourriture n'apparaît</td>
+</tr>
+<tr>
+<td>Virages</td>
+<td>Jusqu'à 2 virages sont mis en mémoire tampon (les doubles appuis rapides ne sont pas perdus), les demi-tours à 180° sont refusés, et la cellule que la queue vient de libérer reste accessible</td>
+</tr>
+<tr>
+<td>Commandes</td>
+<td>Flèches / WASD pour tourner, Espace pour mettre en pause ou reprendre, une flèche démarre une partie depuis l'état initial ; au tactile, balayez pour tourner et touchez pour mettre en pause ; un bouton ayant le focus n'avale pas l'Espace</td>
+</tr>
+<tr>
+<td>Stabilité</td>
+<td>Au plus 4 étapes de rattrapage par image : revenir sur un onglet en arrière-plan ne téléporte donc jamais le serpent dans un mur</td>
+</tr>
+<tr>
+<td>Accessibilité</td>
+<td>Ligne d'état annoncée via <code>role="status" aria-live="polite"</code>, boutons accessibles au clavier, canvas étiqueté</td>
+</tr>
+<tr>
+<td>Points d'accroche de débogage</td>
+<td><code>window.snakeGame</code> (instance active), <code>window.SnakeGame</code> (classe), <code>window.SNAKE_DIFFICULTIES</code>, <code>window.SNAKE_LANGUAGES</code></td>
+</tr>
+</tbody>
+</table>
+<h2>3. Installation</h2>
+<p><strong>Prérequis : aucun.</strong> Le skill lui-même est du texte brut plus un fichier HTML ; pour jouer, il suffit d'un navigateur moderne (Chrome / Edge / Firefox / Safari). Facultatif : un Python 3 quelconque, si vous souhaitez servir la page en HTTP.</p>
+<h3>Option A : installer comme skill d'agent</h3>
+<ol>
+<li>Copiez tout le dossier du skill dans le dossier de skills de votre agent :</li>
+</ol>
+<p><code>bash
+   # The exact target depends on your host; Codex-style tools read skill
+   # packages from a skills directory, for example.
+   cp -r skills/snake-game &lt;your-skills-dir&gt;/snake-game</code></p>
+<ol start="2">
+<li>Rechargez (ou redémarrez) l'hôte pour qu'il découvre le nouveau skill.</li>
+<li>Invoquez-le explicitement, ou décrivez simplement ce que vous voulez et laissez le skill se déclencher :</li>
+</ol>
+<p><code>text
+   $snake-game generate a snake game I can open and play right away</code></p>
+<h3>Option B : aucune installation</h3>
+<p>Le fichier de base contenu dans le dossier du skill <em>est</em> le jeu complet — copiez-le, ou ouvrez-le là où il se trouve :</p>
+<pre><code class="language-bash">skills/snake-game/assets/snake-game.html
+</code></pre>
+<h3>Option C : l'intégrer manuellement à n'importe quelle IA</h3>
+<p>Transmettez <code>SKILL.md</code> au modèle comme instructions et <code>assets/snake-game.html</code> comme modèle de départ. Aucun hôte particulier n'est requis.</p>
+<h3>Facultatif : vérifier que l'installation est complète</h3>
+<p>Le paquet suit l'arborescence Agent Skill ; vous pouvez donc le valider avec le script officiel skill-creator (à vous de fournir votre copie du script) :</p>
+<pre><code class="language-bash">python quick_validate.py skills/snake-game
+# expected output: Skill is valid!
+</code></pre>
+<p>Le dossier doit contenir <code>SKILL.md</code>, <code>agents/openai.yaml</code> et <code>assets/snake-game.html</code>, sans <code>scripts/</code> superflu.</p>
+<h2>4. Utilisation</h2>
+<h3>4.1 Générer ou personnaliser avec le skill</h3>
+<pre><code class="language-text">$snake-game generate a snake game I can open and play right away
+Adjust the snake game: 16×16 board, 3 difficulty levels, dark theme
+Neon colours, bigger cells, 5 difficulty levels, press P to pause
+</code></pre>
+<p>Le skill ne modifie que ce que vous nommez et conserve le reste du comportement de la base ; la remise vous indique le chemin du fichier, comment l'ouvrir, comment jouer et ce qui a changé.</p>
+<h3>4.2 Jouer directement à la base</h3>
+<pre><code class="language-bash"># Option 1: double-click it — no environment needed
+skills/snake-game/assets/snake-game.html
+
+# Option 2: serve it over HTTP
+cd skills/snake-game/assets
+python -m http.server 8000
+# then open http://localhost:8000/snake-game.html
+</code></pre>
+<p>Comment jouer : cliquez sur <code>Jouer</code>, dirigez le serpent avec les <strong>flèches / WASD</strong>, appuyez sur <strong>Espace</strong> pour mettre en pause ou reprendre, et cliquez sur <code>Difficulté : Normal</code> pour parcourir les niveaux (vous pouvez changer à tout moment, y compris en cours de partie). Utilisez la rangée de langues sous les boutons pour basculer l'interface entre l'anglais, 简体中文, Français, Русский et 日本語 — la page démarre en anglais et mémorise votre choix.</p>
+<h3>4.3 Quoi modifier, et où</h3>
+<table>
+<thead>
+<tr>
+<th>Ce que vous voulez modifier</th>
+<th>Où le modifier</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Taille de la grille et taille en pixels des cellules</td>
+<td><code>new SnakeGame(canvas, { cols, rows, cell, difficultyIndex })</code> — le canvas est redimensionné à l'exécution d'après le nombre de cellules, les attributs HTML <code>width</code>/<code>height</code> n'ont donc pas à être modifiés à la main</td>
+</tr>
+<tr>
+<td>Niveaux de difficulté, vitesses et leurs noms</td>
+<td><code>DIFFICULTIES</code> (identifiants et <code>stepMs</code> ; plus petit signifie plus rapide) ainsi que la table <code>difficulty</code> de chaque langue dans <code>MESSAGES</code> — le bouton parcourt tous les niveaux existants, et un nom manquant se rabat sur l'identifiant du niveau</td>
+</tr>
+<tr>
+<td>Couleurs</td>
+<td><code>COLORS</code> (grille, lignes de grille, bordure, nourriture, corps, tête, flèches, yeux)</td>
+</tr>
+<tr>
+<td>Libellés de l'interface, ou ajout d'une sixième langue</td>
+<td><code>MESSAGES</code> pour le texte et <code>LANGUAGES</code> pour la rangée de sélection</td>
+</tr>
+<tr>
+<td>Correspondance des touches de direction et touche de pause</td>
+<td><code>KEY_DIRECTIONS</code> et le gestionnaire <code>keydown</code></td>
+</tr>
+</tbody>
+</table>
+<h3>4.4 Déboguer dans la console du navigateur</h3>
+<pre><code class="language-js">snakeGame.setDifficulty('insane'); // jump to the fastest level (index also accepted)
+snakeGame.setLanguage('ja');       // switch the UI language
+snakeGame.tick();                  // advance one step by hand
+snakeGame.snapshot();              // state, score, snake coordinates, speed, language
+snakeGame.render();                // repaint the current position
+snakeGame.start();                 // start a fresh game
+</code></pre>
+<h2>5. Exemples d'entrée / sortie</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Saisie de l'utilisateur</th>
+<th>Sortie du skill</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>« Fais-moi un jeu de serpent que je peux ouvrir et auquel je peux jouer »</td>
+<td>Copie la base vers <code>index.html</code> sans toucher à la spécification, avec la façon de l'ouvrir et d'y jouer</td>
+</tr>
+<tr>
+<td>2</td>
+<td>« Grille 16×16, 3 niveaux de difficulté, thème sombre » (fonctionne dans n'importe quelle langue)</td>
+<td>La même page avec 16 lignes × 16 colonnes, 3 vitesses (200 / 120 / 70 ms), un fond sombre et un serpent émeraude ; tout le reste inchangé</td>
+</tr>
+<tr>
+<td>3</td>
+<td>« Couleurs néon, cellules plus grandes, 5 niveaux de difficulté, P pour la pause »</td>
+<td>Une grille 12×12 à grandes cellules, 5 niveaux de difficulté, une palette néon, P comme touche de pause (Espace fonctionne toujours) et le texte d'indication mis à jour en conséquence</td>
+</tr>
+<tr>
+<td>4</td>
+<td>« Transforme le contrôle de difficulté en menu déroulant et ajoute un bouton pour rejouer »</td>
+<td>Le contrôle de difficulté et les boutons sont remplacés sur la base ; le reste de la spécification demeure tel quel</td>
+</tr>
+<tr>
+<td>5</td>
+<td>« Scrape une page web pour moi / produis un PDF / crée un paquet Anki »</td>
+<td>Explique que cela sort du périmètre du skill et ne produit pas de page de jeu</td>
+</tr>
+</tbody>
+</table>
+<p>Un résultat typique pour une demande de type 1 :</p>
+<pre><code class="language-text">index.html        # one self-contained file, double-click to play (~830 lines, 0 external dependencies)
+</code></pre>
+<pre><code class="language-text">Created index.html (20×20 board, default difficulty &quot;Normal&quot;).
+To open: double-click it, or run python -m http.server 8000 in this directory and visit http://localhost:8000/
+Controls: arrow keys / WASD to turn, Space to pause, click &quot;Difficulty&quot; to cycle levels (Easy 220 → Insane 60 ms per cell).
+The interface ships in English by default and switches to 简体中文, Français, Русский or 日本語 from the language row.
+No spec changes were made; this matches the baseline.
+</code></pre>
+<p>Les demandes de type 2 et 3 ne touchent que les points de modification listés dans « Quoi modifier, et où », après quoi la liste de vérification d'acceptation est parcourue à nouveau.</p>
+<h2>Arborescence du dépôt</h2>
+<pre><code class="language-text">README.md                  # this file (English, the default)
+README.zh-CN.md            # 简体中文
+README.fr.md               # Français
+README.ru.md               # Русский
+README.ja.md               # 日本語
+LICENSE                    # MIT licence
+skills/snake-game/
+├── SKILL.md               # English: delivery spec, workflow, acceptance checklist, boundaries
+├── SKILL.zh-CN.md         # 简体中文
+├── SKILL.fr.md            # Français
+├── SKILL.ru.md            # Русский
+├── SKILL.ja.md            # 日本語
+├── agents/openai.yaml     # UI metadata: display_name / short_description / default_prompt
+└── assets/snake-game.html # the complete runnable baseline game (rendering, score, difficulty, languages, pause, touch, accessibility)
+docs/preview.png           # preview above (English UI, real browser render)
+docs/preview.zh-CN.png     # the same board with the Chinese UI
+</code></pre>
+<p>Il n'y a pas de <code>scripts/</code> dans le dossier du skill : cette tâche n'en a pas besoin, et le HTML de base est lui-même le modèle que vous copiez.</p>
+<h2>Vérification</h2>
+<ul>
+<li><code>SKILL.md</code> et <code>agents/openai.yaml</code> passent le <code>quick_validate.py</code> officiel de skill-creator (sortie : <code>Skill is valid!</code>) ainsi qu'un contrôle structurel plus strict : budgets de lignes et de caractères du fichier principal, existence des chemins référencés, champs de métadonnées et vérification des dossiers vides ne signalent aucune erreur.</li>
+<li>La logique du jeu a été éprouvée par 24 assertions dans un vrai moteur Chromium (Edge sans interface graphique) et 87 assertions sous Node avec un simulacre de DOM, couvrant : le déplacement et l'ingestion, la collision avec un mur, la collision avec soi-même, la victoire en remplissant la grille, la correspondance difficulté-vitesse, le refus des demi-tours, la mise en mémoire tampon des virages, la pause et la reprise, la persistance du meilleur score avec un repli sûr lorsque le stockage est indisponible, le plafond de rattrapage après une longue interruption, ainsi que le contenu et les couleurs du canvas.</li>
+<li>La couche linguistique est également couverte : l'anglais est la langue par défaut, les cinq langues affichent leurs propres libellés, le changement est instantané, le choix survit à un rechargement et une valeur stockée inconnue se rabat sur l'anglais.</li>
+<li>Les demandes de type 1, 2 et 3 du tableau ci-dessus ont réellement été générées et retestées de bout en bout ; les images d'aperçu sont de vrais rendus de navigateur.</li>
+<li>Non vérifié : le comportement de <code>localStorage</code> sous <code>file://</code> varie selon les navigateurs (le code se dégrade au lieu de lever une exception).</li>
+</ul>
+<h2>Licence</h2>
+<p>Publié sous <a href="LICENSE">MIT License</a> : libre d'utilisation, de modification, de distribution et d'usage commercial, tant que l'avis de copyright et de licence est conservé.</p>
+<pre><code class="language-text">Copyright (c) 2026 Snake-game Skill contributors
+</code></pre>
+<p>Pour y mettre votre propre nom, modifiez cette ligne dans <code>LICENSE</code>.</p>
+</article>
+<article class="doc" data-lang="ru" data-title="Snake-game Skill — Русский" hidden>
+<h1>Snake-game Skill</h1>
+<p>Открытый Agent Skill, благодаря которому ИИ выдаёт вам игру «змейка», <strong>в которую можно играть сразу после открытия файла</strong>.</p>
+<p><img alt="Превью игры «змейка»" src="docs/preview.png" /></p>
+<h2>1. Какую задачу это решает?</h2>
+<p>Написать «змейку», которая «просто работает по двойному щелчку», — значит одновременно уладить длинный список мелких деталей: цикл по времени и скорости уровней сложности, три разных финала (удар в стену / удар в себя / заполнение поля), клавиши направления, которые теряют ввод при быстром нажатии, змейка, телепортирующаяся в стену после переключения вкладки и возвращения, сохранение рекорда, сенсорное управление и внешние ресурсы, из-за которых страница ломается, стоит оказаться офлайн. Попросите ИИ сгенерировать всё с нуля — и результат обычно выглядит играбельным, скрывая настоящие ошибки.</p>
+<p>Этот проект фиксирует <strong>полную реализацию, проверенную автоматическими тестами</strong>, в виде ресурса навыка и переносит спецификацию поставки вместе с чек-листом приёмки в <code>SKILL.md</code>: вместо написания с нуля ИИ копирует базовую версию, меняет только то, что просил пользователь, и проверяет себя по пунктам перед выдачей результата.</p>
+<ul>
+<li><strong>Для пользователей</strong>: ничего устанавливать и собирать не нужно — вы получаете один <code>index.html</code>, который играется по двойному щелчку. Кастомизация затрагивает несколько документированных точек, а всё остальное не ломается.</li>
+<li><strong>Для ИИ</strong>: критерий «готово» — пользователь может открыть страницу и действительно играть; спецификация, условия окончания и проверки записаны в навык, а не придумываются на ходу.</li>
+<li><strong>Не для</strong>: веб-скрапинга, работы с PDF или Anki; а также всего, что требует бэкенда, сетевой игры или таблицы лидеров (навык прямо об этом предупреждает; для такого нужен отдельный проект).</li>
+</ul>
+<h2>2. Основные возможности</h2>
+<h3>2.1 Возможности навыка</h3>
+<ul>
+<li><strong>Жёсткая спецификация поставки</strong>: строка счёта сверху, сеточное поле посередине, две кнопки снизу, внешний вид змейки и еды, сложность и скорость, условия окончания, управление и сообщения о состоянии — всё записано в таблицу спецификации в <code>SKILL.md</code>.</li>
+<li><strong>Процесс из пяти шагов</strong>: выбрать путь вывода → скопировать <code>assets/snake-game.html</code> как основу → изменить только то, что назвал пользователь → пройти чек-лист приёмки → сообщить путь, способ открытия и список изменений.</li>
+<li><strong>Чек-лист приёмки</strong>: три группы, проверяемые по пунктам, — структура (один файл, никаких внешних ссылок, чистая консоль), поведение (поедание, три финала, повороты, пауза, рекорд, узкие экраны) и визуальная часть.</li>
+<li><strong>Пять документированных точек изменений</strong>: <code>COLORS</code>, <code>DIFFICULTIES</code>, <code>MESSAGES</code> (все тексты интерфейса и переводы), <code>new SnakeGame(canvas, { cols, rows, cell, difficultyIndex })</code> и слой ввода (<code>KEY_DIRECTIONS</code> и обработчик <code>keydown</code>).</li>
+<li><strong>Границы применимости</strong>: никакого скрапинга / PDF / Anki; никаких фреймворков, сборщиков и бэкенда.</li>
+</ul>
+<h3>2.2 Игра, которую вы получаете (измерено на базовой версии)</h3>
+<table>
+<thead>
+<tr>
+<th>Область</th>
+<th>Возможность</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Форма поставки</td>
+<td>Один самодостаточный HTML-файл, HTML/CSS/JS полностью внутри, <strong>0 внешних ссылок</strong>, без сборки, играется офлайн по двойному щелчку</td>
+</tr>
+<tr>
+<td>Поле</td>
+<td>20 × 20 клеток по 24 px по умолчанию (480 × 480 внутри, масштабируется через <code>devicePixelRatio</code>, чтобы оставаться чётким), светло-бирюзовый фон + белые линии сетки + тёмная рамка, уменьшается на узких экранах</td>
+</tr>
+<tr>
+<td>Счёт</td>
+<td>Верхняя строка <code>Score: N　Best: M</code>, обновляется на ходу; рекорд записывается в <code>localStorage</code> (ключ <code>snake-game:best-score</code>) в конце игры и переживает перезагрузку; при недоступности хранилища деградирует, но не падает</td>
+</tr>
+<tr>
+<td>Сложность</td>
+<td>4 уровня, чем выше сложность, тем быстрее: Легко 220, Обычно 150, Сложно 100, Ад 60 мс на клетку, по умолчанию Обычно; переключение по ходу игры применяется сразу, а строка-подсказка показывает текущую скорость</td>
+</tr>
+<tr>
+<td>Языки</td>
+<td>Интерфейс поставляется на <strong>английском (по умолчанию)</strong>, 简体中文, Français, Русский и 日本語. Один щелчок мгновенно переподписывает всю страницу, а выбор запоминается в <code>localStorage</code> (ключ <code>snake-game:language</code>)</td>
+</tr>
+<tr>
+<td>Финалы</td>
+<td>Голова ударяется о стену → проигрыш; голова ударяется о собственное тело → проигрыш (оверлей называет причину и показывает итоговый счёт); змейка заполняет все клетки → победа, и новая еда больше не появляется</td>
+</tr>
+<tr>
+<td>Повороты</td>
+<td>Буферизуется до 2 поворотов (быстрые двойные нажатия не теряются), развороты на 180° отклоняются, а в клетку, которую только что покинул хвост, войти можно</td>
+</tr>
+<tr>
+<td>Управление</td>
+<td>Стрелки / WASD для поворота, Space для паузы или продолжения, нажатие стрелки запускает игру из простоя; на сенсорных экранах свайп поворачивает, а касание ставит паузу; кнопка в фокусе не перехватывает Space</td>
+</tr>
+<tr>
+<td>Устойчивость</td>
+<td>Не более 4 догоняющих шагов за кадр, поэтому возвращение на свёрнутую вкладку никогда не телепортирует змейку в стену</td>
+</tr>
+<tr>
+<td>Доступность</td>
+<td>Строка состояния объявляется через <code>role="status" aria-live="polite"</code>, кнопки доступны с клавиатуры, у canvas есть подпись</td>
+</tr>
+<tr>
+<td>Отладочные хуки</td>
+<td><code>window.snakeGame</code> (живой экземпляр), <code>window.SnakeGame</code> (класс), <code>window.SNAKE_DIFFICULTIES</code>, <code>window.SNAKE_LANGUAGES</code></td>
+</tr>
+</tbody>
+</table>
+<h2>3. Установка</h2>
+<p><strong>Требования: нет.</strong> Сам навык — это обычный текст плюс один HTML-файл; для игры нужен лишь современный браузер (Chrome / Edge / Firefox / Safari). Необязательно: любой Python 3, если вы хотите отдавать страницу по HTTP.</p>
+<h3>Вариант A: установка как навыка агента</h3>
+<ol>
+<li>Скопируйте весь каталог навыка в каталог навыков вашего агента:</li>
+</ol>
+<p><code>bash
+   # Точный путь назначения зависит от вашей платформы; инструменты
+   # в стиле Codex читают пакеты навыков из каталога skills.
+   cp -r skills/snake-game &lt;your-skills-dir&gt;/snake-game</code></p>
+<ol start="2">
+<li>Перезагрузите (или перезапустите) платформу, чтобы она обнаружила новый навык.</li>
+<li>Вызовите навык явно — или просто опишите, что вам нужно, и позвольте ему сработать самому:</li>
+</ol>
+<p><code>text
+   $snake-game generate a snake game I can open and play right away</code></p>
+<h3>Вариант B: без установки</h3>
+<p>Базовый файл внутри каталога навыка <em>и есть</em> готовая игра — скопируйте его или откройте на месте:</p>
+<pre><code class="language-bash">skills/snake-game/assets/snake-game.html
+</code></pre>
+<h3>Вариант C: подключить к любому ИИ вручную</h3>
+<p>Передайте модели <code>SKILL.md</code> как инструкции, а <code>assets/snake-game.html</code> — как шаблон. Конкретная платформа не требуется.</p>
+<h3>Необязательно: проверить, что установка полная</h3>
+<p>Пакет соответствует раскладке Agent Skill, поэтому его можно проверить официальным скриптом skill-creator (свою копию скрипта нужно взять отдельно):</p>
+<pre><code class="language-bash">python quick_validate.py skills/snake-game
+# expected output: Skill is valid!
+</code></pre>
+<p>В каталоге должны быть <code>SKILL.md</code>, <code>agents/openai.yaml</code> и <code>assets/snake-game.html</code> — и никаких лишних <code>scripts/</code>.</p>
+<h2>4. Использование</h2>
+<h3>4.1 Генерация или кастомизация с помощью навыка</h3>
+<pre><code class="language-text">$snake-game generate a snake game I can open and play right away
+Adjust the snake game: 16×16 board, 3 difficulty levels, dark theme
+Neon colours, bigger cells, 5 difficulty levels, press P to pause
+</code></pre>
+<p>Навык меняет только то, что вы назвали, и сохраняет остальное поведение базовой версии; в ответе вы получаете путь к файлу, способ его открыть, правила игры и список изменений.</p>
+<h3>4.2 Играть в базовую версию напрямую</h3>
+<pre><code class="language-bash"># Option 1: double-click it — no environment needed
+skills/snake-game/assets/snake-game.html
+
+# Option 2: serve it over HTTP
+cd skills/snake-game/assets
+python -m http.server 8000
+# then open http://localhost:8000/snake-game.html
+</code></pre>
+<p>Как играть: нажмите <code>Начать игру</code>, управляйте <strong>стрелками / WASD</strong>, нажимайте <strong>Space</strong> для паузы или продолжения и щёлкайте <code>Сложность: Обычно</code>, чтобы перебирать уровни (переключать можно в любой момент, в том числе по ходу игры). Строка языков под кнопками переключает интерфейс между английским, 简体中文, Français, Русский и 日本語 — страница открывается на английском и запоминает ваш выбор.</p>
+<h3>4.3 Что и где менять</h3>
+<table>
+<thead>
+<tr>
+<th>Что вы хотите изменить</th>
+<th>Где это менять</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Размер поля и размер клетки в пикселях</td>
+<td><code>new SnakeGame(canvas, { cols, rows, cell, difficultyIndex })</code> — canvas изменяет размер по числу клеток во время выполнения, поэтому атрибуты <code>width</code>/<code>height</code> в HTML править вручную не нужно</td>
+</tr>
+<tr>
+<td>Уровни сложности, скорости и их названия</td>
+<td><code>DIFFICULTIES</code> (идентификаторы и <code>stepMs</code>; меньше — быстрее) плюс карта <code>difficulty</code> внутри каждого языка в <code>MESSAGES</code> — кнопка перебирает все существующие уровни, а при отсутствии названия используется идентификатор уровня</td>
+</tr>
+<tr>
+<td>Цвета</td>
+<td><code>COLORS</code> (поле, линии сетки, рамка, еда, тело, голова, стрелки, глаза)</td>
+</tr>
+<tr>
+<td>Тексты интерфейса или добавление шестого языка</td>
+<td><code>MESSAGES</code> для текста и <code>LANGUAGES</code> для строки переключателя</td>
+</tr>
+<tr>
+<td>Соответствие стрелок клавишам и клавиша паузы</td>
+<td><code>KEY_DIRECTIONS</code> и обработчик <code>keydown</code></td>
+</tr>
+</tbody>
+</table>
+<h3>4.4 Отладка в консоли браузера</h3>
+<pre><code class="language-js">snakeGame.setDifficulty('insane'); // jump to the fastest level (index also accepted)
+snakeGame.setLanguage('ja');       // switch the UI language
+snakeGame.tick();                  // advance one step by hand
+snakeGame.snapshot();              // state, score, snake coordinates, speed, language
+snakeGame.render();                // repaint the current position
+snakeGame.start();                 // start a fresh game
+</code></pre>
+<h2>5. Примеры ввода и вывода</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Запрос пользователя</th>
+<th>Результат работы навыка</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>«Сделай мне змейку, которую можно открыть и сразу играть»</td>
+<td>Копирует базовую версию в <code>index.html</code> без изменений спецификации, а также рассказывает, как открыть файл и как играть</td>
+</tr>
+<tr>
+<td>2</td>
+<td>«Поле 16×16, 3 уровня сложности, тёмная тема» (работает на любом языке)</td>
+<td>Та же страница с 16 строками × 16 столбцами, 3 скоростями (200 / 120 / 70 мс), тёмным фоном и изумрудной змейкой; всё остальное без изменений</td>
+</tr>
+<tr>
+<td>3</td>
+<td>«Неоновые цвета, клетки побольше, 5 уровней сложности, пауза на P»</td>
+<td>Поле 12×12 с крупными клетками, 5 уровней сложности, неоновая палитра, клавиша P для паузы (Space по-прежнему работает) и обновлённая строка-подсказка</td>
+</tr>
+<tr>
+<td>4</td>
+<td>«Сделай выбор сложности выпадающим списком и добавь кнопку перезапуска»</td>
+<td>Элемент выбора сложности и кнопки заменяются поверх базовой версии; остальная спецификация остаётся прежней</td>
+</tr>
+<tr>
+<td>5</td>
+<td>«Собери мне данные с веб-страницы / сделай PDF / собери колоду Anki»</td>
+<td>Объясняет, что это вне рамок навыка, и не создаёт игровую страницу</td>
+</tr>
+</tbody>
+</table>
+<p>Типичный результат для запроса типа 1:</p>
+<pre><code class="language-text">index.html        # one self-contained file, double-click to play (~830 lines, 0 external dependencies)
+</code></pre>
+<pre><code class="language-text">Created index.html (20×20 board, default difficulty &quot;Normal&quot;).
+To open: double-click it, or run python -m http.server 8000 in this directory and visit http://localhost:8000/
+Controls: arrow keys / WASD to turn, Space to pause, click &quot;Difficulty&quot; to cycle levels (Easy 220 → Insane 60 ms per cell).
+The interface ships in English by default and switches to 简体中文, Français, Русский or 日本語 from the language row.
+No spec changes were made; this matches the baseline.
+</code></pre>
+<p>Запросы типов 2 и 3 затрагивают только точки изменений, перечисленные в разделе «Что и где менять», после чего чек-лист приёмки проходится заново.</p>
+<h2>Состав репозитория</h2>
+<pre><code class="language-text">README.md                  # this file (English, the default)
+README.zh-CN.md            # 简体中文
+README.fr.md               # Français
+README.ru.md               # Русский
+README.ja.md               # 日本語
+LICENSE                    # MIT licence
+skills/snake-game/
+├── SKILL.md               # English: delivery spec, workflow, acceptance checklist, boundaries
+├── SKILL.zh-CN.md         # 简体中文
+├── SKILL.fr.md            # Français
+├── SKILL.ru.md            # Русский
+├── SKILL.ja.md            # 日本語
+├── agents/openai.yaml     # UI metadata: display_name / short_description / default_prompt
+└── assets/snake-game.html # the complete runnable baseline game (rendering, score, difficulty, languages, pause, touch, accessibility)
+docs/preview.png           # preview above (English UI, real browser render)
+docs/preview.zh-CN.png     # the same board with the Chinese UI
+</code></pre>
+<p>Внутри каталога навыка нет <code>scripts/</code>: этой задаче он не нужен, а сам базовый HTML и есть шаблон, который вы копируете.</p>
+<h2>Проверка</h2>
+<ul>
+<li><code>SKILL.md</code> и <code>agents/openai.yaml</code> проходят официальный <code>quick_validate.py</code> от skill-creator (вывод: <code>Skill is valid!</code>), а также более строгую структурную проверку: лимиты строк и символов основного файла, существование упомянутых путей, поля метаданных и пустые каталоги — 0 ошибок.</li>
+<li>Игровая логика была проверена 24 утверждениями в настоящем движке Chromium (headless Edge) и 87 утверждениями под Node с заглушкой DOM, охватывающими: движение и поедание, столкновение со стеной, столкновение с собой, победу при заполнении поля, соответствие сложности и скорости, отклонение разворота, буферизацию поворотов, паузу и продолжение, сохранение рекорда с безопасным откатом при недоступности хранилища, ограничение догоняющих шагов после долгой задержки, а также содержимое и цвета canvas.</li>
+<li>Языковой слой тоже покрыт: по умолчанию английский, все пять языков выводят собственные подписи, переключение мгновенное, выбор переживает перезагрузку, а неизвестное сохранённое значение откатывается к английскому.</li>
+<li>Запросы типов 1, 2 и 3 из таблицы выше действительно генерировались и повторно тестировались от начала до конца; изображения превью — настоящие отрисовки браузера.</li>
+<li>Не проверено: поведение <code>localStorage</code> при <code>file://</code> различается в разных браузерах (код деградирует, а не выбрасывает исключение).</li>
+</ul>
+<h2>Лицензия</h2>
+<p>Распространяется по <a href="LICENSE">лицензии MIT</a>: свободно используйте, изменяйте, распространяйте и применяйте в коммерческих целях, если сохраняете уведомление об авторских правах и лицензии.</p>
+<pre><code class="language-text">Copyright (c) 2026 Snake-game Skill contributors
+</code></pre>
+<p>Чтобы указать собственное имя, отредактируйте эту одну строку в <code>LICENSE</code>.</p>
+</article>
+<article class="doc" data-lang="ja" data-title="Snake-game Skill — 日本語" hidden>
+<h1>Snake-game Skill</h1>
+<p>オープンソースの Agent Skill です。AI が<strong>開いた瞬間に遊べる</strong>スネークゲームを渡してくれるようにします。</p>
+<p><img alt="スネークゲームのプレビュー" src="docs/preview.png" /></p>
+<h2>1. 何を解決するのか</h2>
+<p>「ダブルクリックすればそのまま動く」スネークゲームを書くには、細かくて厄介な点を同時に押さえる必要があります。タイマーループと難易度ごとの速度、3 通りの終わり方（壁に衝突／自分に衝突／盤面を埋める）、素早く連打すると入力が抜ける方向キー、タブを切り替えて戻ると蛇が壁までワープする問題、最高スコアの永続化、タッチ操作、そしてオフラインになった瞬間にページが壊れる外部アセット。AI にゼロから生成させると、遊べそうに見えるのに実際にはバグが潜んでいる、という結果になりがちです。</p>
+<p>本プロジェクトは、<strong>自動テストで検証済みの完全な実装</strong>をスキル資産として固定し、交付仕様と受け入れチェックリストを <code>SKILL.md</code> に書き込みました。AI はゼロから書くのではなく、ベースラインをコピーし、ユーザーが指定した箇所だけを変更し、交付前にチェックリストで項目ごとに自己点検します。</p>
+<ul>
+<li><strong>利用者の方へ</strong>: 環境構築もビルドも不要です。ダブルクリックで遊べる <code>index.html</code> が 1 つ手に入ります。カスタマイズはドキュメント化された変更点だけを触ればよく、それ以外の挙動は退行しません。</li>
+<li><strong>AI へ</strong>:「完了」の基準は、ユーザーがページを開いて実際に遊べることです。仕様・終了条件・チェック項目はその場の判断ではなく、スキル内に書き込まれています。</li>
+<li><strong>対象外</strong>: Web スクレイピング、PDF、Anki 関連。また、バックエンドやオンライン対戦、ランキングが必要なもの（スキルが冒頭で明示します。別途設計が必要です）。</li>
+</ul>
+<h2>2. 主な機能</h2>
+<h3>2.1 スキルの機能</h3>
+<ul>
+<li><strong>固定の交付仕様</strong>: 上部のスコア行、中央のグリッド盤面、下部の 2 つのボタン、蛇と餌の見た目、難易度と速度、終了条件、操作方法、ステータスメッセージを、それぞれ <code>SKILL.md</code> の仕様表に記載しています。</li>
+<li><strong>5 ステップのワークフロー</strong>: 出力先を決める → <code>assets/snake-game.html</code> をベースラインとしてコピーする → ユーザーが指定した箇所だけを変更する → 受け入れチェックリストを実行する → パス、開き方、変更内容を報告する。</li>
+<li><strong>受け入れチェックリスト</strong>: 構造（単一ファイル、外部リンクなし、コンソールがクリーン）、挙動（餌を食べる、3 通りの終わり方、旋回、一時停止、最高スコア、狭い画面）、見た目の 3 グループを項目ごとに確認します。</li>
+<li><strong>ドキュメント化された 5 つの変更点</strong>: <code>COLORS</code>、<code>DIFFICULTIES</code>、<code>MESSAGES</code>（UI の文言と翻訳すべて）、<code>new SnakeGame(canvas, { cols, rows, cell, difficultyIndex })</code>、入力レイヤー（<code>KEY_DIRECTIONS</code> と <code>keydown</code> ハンドラー）。</li>
+<li><strong>境界</strong>: スクレイピング／PDF／Anki は行いません。フレームワーク、バンドラー、バックエンドも導入しません。</li>
+</ul>
+<h3>2.2 交付されるゲーム（ベースラインでの実測値）</h3>
+<table>
+<thead>
+<tr>
+<th>分類</th>
+<th>機能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>交付形態</td>
+<td>単一の自己完結型 HTML ファイル。HTML/CSS/JS はすべてインラインで、<strong>外部参照 0 件</strong>、ビルド手順なし、オフラインでもダブルクリックで遊べます</td>
+</tr>
+<tr>
+<td>盤面</td>
+<td>既定では 20 × 20 マス、1 マス 24 px（内部は 480 × 480 で、<code>devicePixelRatio</code> により拡大縮小して鮮明さを維持）。薄い青緑の背景 + 白いグリッド線 + 濃い枠線で、狭いビューポートにも縮小して収まります</td>
+</tr>
+<tr>
+<td>スコア</td>
+<td>上部の行は <code>スコア: N　最高スコア: M</code> でリアルタイムに更新されます。最高スコアはゲーム終了時に <code>localStorage</code>（キー <code>snake-game:best-score</code>）へ書き込まれ、リロード後も保持されます。ストレージが利用できない場合もクラッシュせずに縮退します</td>
+</tr>
+<tr>
+<td>難易度</td>
+<td>4 段階で、難易度が上がるほど高速です。かんたん 220、ふつう 150、むずかしい 100、地獄 60 ミリ秒／マス。既定はふつうで、ゲーム中に切り替えると即座に反映され、ヒント行に現在の速度が表示されます</td>
+</tr>
+<tr>
+<td>言語</td>
+<td>UI は<strong>英語（既定）</strong>、简体中文、Français、Русский、日本語に対応しています。ワンクリックでページ全体のラベルが即座に切り替わり、選択は <code>localStorage</code>（キー <code>snake-game:language</code>）に記憶されます</td>
+</tr>
+<tr>
+<td>終了条件</td>
+<td>頭が壁に衝突 → 敗北。頭が自分の胴体に衝突 → 敗北（オーバーレイに理由と最終スコアを表示）。蛇がすべてのマスを埋める → 勝利で、以降は餌が出現しません</td>
+</tr>
+<tr>
+<td>旋回</td>
+<td>最大 2 回の旋回をバッファリングし（素早い二度押しでも入力が抜けません）、180° の反転は拒否され、しっぽが直前まで占めていたマスには進入できます</td>
+</tr>
+<tr>
+<td>操作</td>
+<td>方向キー／WASD で旋回、Space で一時停止または再開、待機中は方向キーでゲームが始まります。タッチではスワイプで旋回、タップで一時停止します。フォーカス中のボタンが Space を奪うことはありません</td>
+</tr>
+<tr>
+<td>安定性</td>
+<td>1 フレームあたりの追いつき処理は最大 4 ステップなので、バックグラウンドのタブから戻っても蛇が壁までワープしません</td>
+</tr>
+<tr>
+<td>アクセシビリティ</td>
+<td>ステータス行は <code>role="status" aria-live="polite"</code> で通知され、ボタンはキーボードでフォーカス可能、キャンバスにはラベルがあります</td>
+</tr>
+<tr>
+<td>デバッグフック</td>
+<td><code>window.snakeGame</code>（実行中のインスタンス）、<code>window.SnakeGame</code>（クラス）、<code>window.SNAKE_DIFFICULTIES</code>、<code>window.SNAKE_LANGUAGES</code></td>
+</tr>
+</tbody>
+</table>
+<h2>3. インストール</h2>
+<p><strong>必要なもの: ありません。</strong> スキル自体はプレーンテキストと 1 つの HTML ファイルです。遊ぶにはモダンなブラウザー（Chrome / Edge / Firefox / Safari）だけが必要です。任意で、ページを HTTP で配信したい場合は任意の Python 3 をご利用ください。</p>
+<h3>方法 A: Agent スキルとしてインストールする</h3>
+<ol>
+<li>スキルディレクトリ全体を、お使いのエージェントのスキルディレクトリへコピーします:</li>
+</ol>
+<p><code>bash
+   # The exact target depends on your host; Codex-style tools read skill
+   # packages from a skills directory, for example.
+   cp -r skills/snake-game &lt;your-skills-dir&gt;/snake-game</code></p>
+<ol start="2">
+<li>ホストを再読み込み（または再起動）して、新しいスキルを認識させます。</li>
+<li>明示的に呼び出すか、ご希望の内容をそのまま伝えてスキルを自動的に発動させます:</li>
+</ol>
+<p><code>text
+   $snake-game generate a snake game I can open and play right away</code></p>
+<h3>方法 B: インストールしない</h3>
+<p>スキルディレクトリ内のベースラインファイルが、そのまま完全なゲームです。コピーするか、その場で開いてください:</p>
+<pre><code class="language-bash">skills/snake-game/assets/snake-game.html
+</code></pre>
+<h3>方法 C: 任意の AI に手動で組み込む</h3>
+<p><code>SKILL.md</code> を指示として、<code>assets/snake-game.html</code> をテンプレートとしてモデルに渡します。特定のホストは必要ありません。</p>
+<h3>任意: インストールが完全か確認する</h3>
+<p>このパッケージは Agent Skill のレイアウトに従っているため、公式の skill-creator スクリプトで検証できます（スクリプトはご自身でご用意ください）:</p>
+<pre><code class="language-bash">python quick_validate.py skills/snake-game
+# expected output: Skill is valid!
+</code></pre>
+<p>ディレクトリには <code>SKILL.md</code>、<code>agents/openai.yaml</code>、<code>assets/snake-game.html</code> が含まれ、余計な <code>scripts/</code> は存在しない状態にしてください。</p>
+<h2>4. 使い方</h2>
+<h3>4.1 スキルで生成・カスタマイズする</h3>
+<pre><code class="language-text">$snake-game generate a snake game I can open and play right away
+Adjust the snake game: 16×16 board, 3 difficulty levels, dark theme
+Neon colours, bigger cells, 5 difficulty levels, press P to pause
+</code></pre>
+<p>スキルは指定された箇所だけを変更し、ベースラインのその他の挙動は維持します。引き渡し時には、ファイルパス、開き方、遊び方、変更内容をお伝えします。</p>
+<h3>4.2 ベースラインをそのまま遊ぶ</h3>
+<pre><code class="language-bash"># Option 1: double-click it — no environment needed
+skills/snake-game/assets/snake-game.html
+
+# Option 2: serve it over HTTP
+cd skills/snake-game/assets
+python -m http.server 8000
+# then open http://localhost:8000/snake-game.html
+</code></pre>
+<p>遊び方: <code>ゲーム開始</code> を押し、<strong>方向キー／WASD</strong> で操作します。<strong>Space</strong> を押すと一時停止または再開し、<code>難易度: ふつう</code> をクリックすると段階が順に切り替わります（ゲーム中を含め、いつでも切り替えられます）。ボタンの下の言語行を使うと、インターフェースを英語、简体中文、Français、Русский、日本語の間で切り替えられます。ページは英語で起動し、選択内容を記憶します。</p>
+<h3>4.3 何をどこで変更するか</h3>
+<table>
+<thead>
+<tr>
+<th>変更したい内容</th>
+<th>変更箇所</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>盤面の大きさと 1 マスのピクセル数</td>
+<td><code>new SnakeGame(canvas, { cols, rows, cell, difficultyIndex })</code> — キャンバスは実行時にマス数からサイズが決まるため、HTML の <code>width</code>/<code>height</code> 属性を手で編集する必要はありません</td>
+</tr>
+<tr>
+<td>難易度の段階、速度、その名称</td>
+<td><code>DIFFICULTIES</code>（id と <code>stepMs</code>。小さいほど高速）と、<code>MESSAGES</code> の各言語内にある <code>difficulty</code> マップ — ボタンは存在する段階をすべて循環し、名称が欠けている場合は段階の id にフォールバックします</td>
+</tr>
+<tr>
+<td>配色</td>
+<td><code>COLORS</code>（盤面、グリッド線、枠線、餌、胴体、頭、矢印、目）</td>
+</tr>
+<tr>
+<td>UI の文言、または 6 つ目の言語の追加</td>
+<td>テキストは <code>MESSAGES</code>、切り替え行は <code>LANGUAGES</code></td>
+</tr>
+<tr>
+<td>方向キーの割り当てと一時停止キー</td>
+<td><code>KEY_DIRECTIONS</code> と <code>keydown</code> ハンドラー</td>
+</tr>
+</tbody>
+</table>
+<h3>4.4 ブラウザーコンソールでデバッグする</h3>
+<pre><code class="language-js">snakeGame.setDifficulty('insane'); // jump to the fastest level (index also accepted)
+snakeGame.setLanguage('ja');       // switch the UI language
+snakeGame.tick();                  // advance one step by hand
+snakeGame.snapshot();              // state, score, snake coordinates, speed, language
+snakeGame.render();                // repaint the current position
+snakeGame.start();                 // start a fresh game
+</code></pre>
+<h2>5. 入出力の例</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>ユーザーの入力</th>
+<th>スキルの出力</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>「開いてすぐ遊べるスネークゲームを作って」</td>
+<td>仕様を変えずにベースラインを <code>index.html</code> へコピーし、開き方と遊び方を添えて渡します</td>
+</tr>
+<tr>
+<td>2</td>
+<td>「16×16 の盤面、難易度 3 段階、ダークテーマ」（どの言語でも可）</td>
+<td>同じページを 16 行 × 16 列、速度 3 段階（200 / 120 / 70 ミリ秒）、暗い背景とエメラルド色の蛇に変更します。それ以外は変更しません</td>
+</tr>
+<tr>
+<td>3</td>
+<td>「ネオンカラー、マスを大きく、難易度 5 段階、P で一時停止」</td>
+<td>12×12 の大きなマスの盤面、難易度 5 段階、ネオンの配色、一時停止キーを P に変更（Space も引き続き有効）し、ヒントの文言も合わせて更新します</td>
+</tr>
+<tr>
+<td>4</td>
+<td>「難易度の操作をドロップダウンにして、もう一度ボタンを追加して」</td>
+<td>ベースライン上で難易度の操作とボタンを置き換えます。仕様のその他の部分はそのままです</td>
+</tr>
+<tr>
+<td>5</td>
+<td>「Web ページをスクレイピングして／PDF を作って／Anki デッキを作って」</td>
+<td>スキルの範囲外であることを説明し、ゲームページは生成しません</td>
+</tr>
+</tbody>
+</table>
+<p>リクエスト 1 の典型的な結果:</p>
+<pre><code class="language-text">index.html        # one self-contained file, double-click to play (~830 lines, 0 external dependencies)
+</code></pre>
+<pre><code class="language-text">Created index.html (20×20 board, default difficulty &quot;Normal&quot;).
+To open: double-click it, or run python -m http.server 8000 in this directory and visit http://localhost:8000/
+Controls: arrow keys / WASD to turn, Space to pause, click &quot;Difficulty&quot; to cycle levels (Easy 220 → Insane 60 ms per cell).
+The interface ships in English by default and switches to 简体中文, Français, Русский or 日本語 from the language row.
+No spec changes were made; this matches the baseline.
+</code></pre>
+<p>リクエスト 2 と 3 では、「何をどこで変更するか」に挙げた変更点だけを触り、その後に受け入れチェックリストをもう一度通します。</p>
+<h2>リポジトリ構成</h2>
+<pre><code class="language-text">README.md                  # this file (English, the default)
+README.zh-CN.md            # 简体中文
+README.fr.md               # Français
+README.ru.md               # Русский
+README.ja.md               # 日本語
+LICENSE                    # MIT licence
+skills/snake-game/
+├── SKILL.md               # English: delivery spec, workflow, acceptance checklist, boundaries
+├── SKILL.zh-CN.md         # 简体中文
+├── SKILL.fr.md            # Français
+├── SKILL.ru.md            # Русский
+├── SKILL.ja.md            # 日本語
+├── agents/openai.yaml     # UI metadata: display_name / short_description / default_prompt
+└── assets/snake-game.html # the complete runnable baseline game (rendering, score, difficulty, languages, pause, touch, accessibility)
+docs/preview.png           # preview above (English UI, real browser render)
+docs/preview.zh-CN.png     # the same board with the Chinese UI
+</code></pre>
+<p>スキルディレクトリ内に <code>scripts/</code> はありません。このタスクには不要で、ベースラインの HTML 自体がコピー元のテンプレートだからです。</p>
+<h2>検証</h2>
+<ul>
+<li><code>SKILL.md</code> と <code>agents/openai.yaml</code> は公式の skill-creator <code>quick_validate.py</code> に合格し（出力: <code>Skill is valid!</code>）、さらに厳格な構造チェックも通過しています。本体ファイルの行数・文字数の上限、参照パスの存在、メタデータの項目、空ディレクトリの確認はいずれもエラー 0 件です。</li>
+<li>ゲームロジックは、実際の Chromium エンジン（ヘッドレス Edge）で 24 件、DOM スタブを用いた Node で 87 件のアサーションにより検証しました。対象は、移動と捕食、壁への衝突、自己衝突、盤面を埋めることによる勝利、難易度と速度の対応、反転の拒否、旋回のバッファリング、一時停止と再開、ストレージが使えない場合の安全なフォールバックを伴う最高スコアの永続化、長時間の停止後の追いつき上限、キャンバスの内容と色です。</li>
+<li>言語レイヤーも対象です。既定は英語で、5 つの言語すべてがそれぞれのラベルを描画し、切り替えは即座に反映され、選択はリロード後も保持され、保存された未知の値は英語にフォールバックします。</li>
+<li>上記の表にあるリクエスト 1、2、3 は実際に生成し、エンドツーエンドで再テストしました。プレビュー画像は実際のブラウザーでのレンダリング結果です。</li>
+<li>未検証: <code>file://</code> での <code>localStorage</code> の挙動はブラウザーによって異なります（コードは例外を投げずに縮退します）。</li>
+</ul>
+<h2>ライセンス</h2>
+<p><a href="LICENSE">MIT License</a> の下で公開しています。著作権表示とライセンス表示を保持していれば、使用、変更、配布、商用利用は自由です。</p>
+<pre><code class="language-text">Copyright (c) 2026 Snake-game Skill contributors
+</code></pre>
+<p>ご自身の名前を表示したい場合は、<code>LICENSE</code> のその 1 行を編集してください。</p>
+</article>
+</main>
+<footer>
+  <p>Single-page documentation: clicking a language re-renders this page in place, the choice is remembered, and it is shared with the game.</p>
+</footer>
+<script>
+(function () {
+  'use strict';
+  var DEFAULT_LANGUAGE = 'en';
+  var STORAGE_KEY = 'snake-game:language';
+  var buttons = document.querySelectorAll('.languages button');
+  var articles = document.querySelectorAll('article[data-lang]');
+  var codes = [];
+  for (var i = 0; i < articles.length; i++) codes.push(articles[i].getAttribute('data-lang'));
+
+  function normalize(code) {
+    if (typeof code !== 'string') return null;
+    var wanted = code.trim().toLowerCase();
+    for (var i = 0; i < codes.length; i++) {
+      if (codes[i].toLowerCase() === wanted) return codes[i];
+    }
+    return null;
+  }
+  function readStored() {
+    try { return normalize(window.localStorage.getItem(STORAGE_KEY)); } catch (error) { return null; }
+  }
+  function save(code) {
+    try { window.localStorage.setItem(STORAGE_KEY, code); } catch (error) { /* file:// or private mode */ }
+  }
+  function fromUrl() {
+    var fromHash = normalize(decodeURIComponent(String(window.location.hash || '').replace(/^#/, '')));
+    if (fromHash) return fromHash;
+    var match = /[?&]lang=([^&]+)/.exec(String(window.location.search || ''));
+    return match ? normalize(decodeURIComponent(match[1])) : null;
+  }
+  function apply(code, remember) {
+    var active = null;
+    for (var i = 0; i < articles.length; i++) {
+      var on = articles[i].getAttribute('data-lang') === code;
+      articles[i].hidden = !on;
+      if (on) active = articles[i];
+    }
+    for (var j = 0; j < buttons.length; j++) {
+      buttons[j].setAttribute('aria-current',
+        buttons[j].getAttribute('data-lang') === code ? 'true' : 'false');
+    }
+    document.documentElement.lang = code;
+    if (active) {
+      var title = active.getAttribute('data-title');
+      if (title) document.title = title;
+    }
+    if (remember) save(code);
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', '#' + code);
+    }
+  }
+  for (var k = 0; k < buttons.length; k++) {
+    buttons[k].addEventListener('click', function () {
+      apply(this.getAttribute('data-lang'), true);
+    });
+  }
+  apply(fromUrl() || readStored() || DEFAULT_LANGUAGE, false);
+})();
+</script>
+</body>
+</html>

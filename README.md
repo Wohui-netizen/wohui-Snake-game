@@ -1,184 +1,204 @@
 # Snake-game Skill
 
-一个可开源的 Agent Skill：让 AI 交付一个**打开就能玩**的贪吃蛇网页游戏。
+**English** · [简体中文](README.zh-CN.md) · [Français](README.fr.md) · [Русский](README.ru.md) · [日本語](README.ja.md)
 
-![贪吃蛇游戏预览](docs/preview.png)
+An open-source Agent Skill that makes an AI hand you a snake game **you can play the moment it opens**.
 
-## 1. 项目解决什么问题
+![Snake game preview](docs/preview.png)
 
-想要一个「双击就能玩」的贪吃蛇网页，从零写要同时处理一堆容易翻车的细节：计时循环与难度速度、撞墙／撞自己／填满棋盘三种终局、快速连按方向键丢输入、切走标签页再回来蛇直接暴走撞墙、最高分持久化、移动端操作、以及外链资源导致断网打不开。让 AI 每次从零生成，结果往往看起来能跑、实际有坑。
+## 1. What problem does this solve?
 
-本项目把一份**已经跑通并被自动化测试覆盖**的完整实现固化成技能资产，把交付规格和验收清单写进 `SKILL.md`：AI 不再从零写，而是复制基线、只改用户点名的部分、按清单逐条自检后交付。
+Writing a snake game that "just works when you double-click it" means getting a long list of fiddly details right at the same time: the timing loop and difficulty speeds, three different endings (hit a wall / hit yourself / fill the board), direction keys that lose input when tapped quickly, a snake that teleports into a wall after you switch tabs and come back, high-score persistence, touch controls, and external assets that break the page the moment you go offline. Ask an AI to generate it from scratch and the result usually looks playable while hiding real bugs.
 
-- **对使用者**：不用装环境、不用构建，拿到一个 `index.html` 双击即玩；改版只动四个改动点，其余行为不回退。
-- **对 AI**：交付标准是「用户能打开并真的玩起来」——规格、终局判定、验收项都写死在技能里，不靠临场发挥。
-- **不适用**：网页抓取、PDF、Anki；以及需要后端、联机对战或排行榜的场景（技能会先说明，需另行设计）。
+This project freezes a **complete, automated-test-verified implementation** into a skill asset, and writes the delivery spec plus an acceptance checklist into `SKILL.md`: instead of writing from scratch, the AI copies the baseline, changes only what the user asked for, and self-checks item by item before delivering.
 
-## 2. 主要功能
+- **For users**: no environment to install, no build step — you get one `index.html` that plays on double-click. Customisation touches a handful of documented points and nothing else regresses.
+- **For the AI**: the bar for "done" is that the user can open the page and actually play it — the spec, the end conditions and the checks are written into the skill instead of being improvised.
+- **Not for**: web scraping, PDF or Anki work; and anything needing a backend, online multiplayer or a leaderboard (the skill says so up front; that needs a separate design).
 
-### 2.1 技能能力
+## 2. Main features
 
-- **固定交付规格**：顶部计分条、中间网格棋盘、下方两个按钮、蛇／食物外观、难度与速度、终局判定、操作方式、状态提示，逐条写进 `SKILL.md` 的规格表。
-- **五步工作流程**：定落点 → 复制 `assets/snake-game.html` 为基线 → 只改用户点名项 → 按验收清单自检 → 说明路径、打开方式与本次改动。
-- **验收清单**：结构（单文件、无外链、控制台无报错）、功能（吃食物、三类终局、转向、暂停、最高分、窄屏）、视觉三组逐条核对。
-- **四个改动点**：`COLORS`（配色）、`DIFFICULTIES`（档位与速度）、`new SnakeGame(canvas, { cols, rows, cell, difficultyIndex })`（棋盘与默认档位）、输入层（`KEY_DIRECTIONS` 与 `keydown` 处理）。
-- **边界**：不做网页抓取／PDF／Anki；不引入框架、打包器与后端。
+### 2.1 Skill capabilities
 
-### 2.2 交付游戏（基线实测特性）
+- **Fixed delivery spec**: score line on top, grid board in the middle, two buttons below, snake/food appearance, difficulty and speed, end conditions, controls and status messages — each written into the spec table in `SKILL.md`.
+- **Five-step workflow**: pick the output path → copy `assets/snake-game.html` as the baseline → change only what the user named → run the acceptance checklist → report path, how to open it, and what changed.
+- **Acceptance checklist**: three groups checked item by item — structure (single file, no external links, clean console), behaviour (eating, the three endings, turning, pausing, high score, narrow screens) and visuals.
+- **Five documented change points**: `COLORS`, `DIFFICULTIES`, `MESSAGES` (all UI wording and translations), `new SnakeGame(canvas, { cols, rows, cell, difficultyIndex })`, and the input layer (`KEY_DIRECTIONS` and the `keydown` handler).
+- **Boundaries**: no scraping / PDF / Anki; no frameworks, bundlers or backends.
 
-| 分类 | 功能 |
+### 2.2 The delivered game (measured on the baseline)
+
+| Area | Feature |
 | --- | --- |
-| 交付形态 | 单个自包含 HTML 文件，HTML/CSS/JS 全内联，**0 个外部引用**，无构建步骤，断网双击即玩 |
-| 棋盘 | 默认 20 × 20 格、每格 24 px（内部 480 × 480，按 `devicePixelRatio` 缩放保证清晰），浅青绿底 + 白色网格线 + 深色外框，窄屏按视口宽度自适应 |
-| 计分 | 顶部 `得分: N　历史最高分: M` 实时更新；最高分在游戏结束时写入 `localStorage`（键 `snake-game:best-score`），刷新后保留；存储被禁用时降级为不崩溃 |
-| 难度 | 4 档，难度越高越快：简单 220、普通 150、困难 100、地狱 60 毫秒／格，默认「普通」，游戏中切换立即生效并在提示行显示当前速度 |
-| 终局 | 蛇头撞墙判负、撞到自己判负（覆盖层给出原因与最终得分）、蛇填满全部格子判通关且不再生成食物 |
-| 转向 | 最多缓冲 2 次转向（快速连按不丢输入）、禁止 180° 反向掉头、贴着蛇尾的格子在被让出时可正常进入 |
-| 操作 | 方向键／WASD 转向，空格暂停／继续，未开局时按方向键直接开始；移动端滑动转向、轻点暂停；焦点在按钮上时不会误触发暂停 |
-| 稳定性 | 每帧最多补 4 步，切走标签页再回来不会瞬间连走几十格撞墙 |
-| 无障碍 | 状态行 `role="status" aria-live="polite"` 播报、按钮可键盘聚焦、画布带 `aria-label` |
-| 调试钩子 | `window.snakeGame`（当前实例）、`window.SnakeGame`（类）、`window.SNAKE_DIFFICULTIES`（档位表） |
+| Delivery form | A single self-contained HTML file, HTML/CSS/JS fully inline, **0 external references**, no build step, plays offline on double-click |
+| Board | 20 × 20 cells at 24 px by default (480 × 480 internally, scaled by `devicePixelRatio` to stay crisp), light teal background + white grid lines + dark border, scales down to narrow viewports |
+| Score | Top line `Score: N　Best: M`, updated live; the best score is written to `localStorage` (key `snake-game:best-score`) when a game ends and survives a refresh; degrades without crashing when storage is unavailable |
+| Difficulty | 4 levels, faster as difficulty rises: Easy 220, Normal 150, Hard 100, Insane 60 ms per cell, defaulting to Normal; switching mid-game applies immediately and the hint line shows the current speed |
+| Languages | The UI ships in **English (default)**, 简体中文, Français, Русский and 日本語. One click re-labels the whole page instantly, and the choice is remembered in `localStorage` (key `snake-game:language`) |
+| Endings | Head hits a wall → loss; head hits its own body → loss (the overlay names the reason and the final score); snake fills every cell → win, and no further food spawns |
+| Turning | Up to 2 turns are buffered (quick double-taps are not lost), 180° reversals are rejected, and the cell the tail has just vacated can be entered |
+| Controls | Arrow keys / WASD to turn, Space to pause or resume, an arrow key starts a game from idle; on touch, swipe to turn and tap to pause; a focused button does not swallow Space |
+| Stability | At most 4 catch-up steps per frame, so returning to a backgrounded tab never teleports the snake into a wall |
+| Accessibility | Status line announced via `role="status" aria-live="polite"`, keyboard-focusable buttons, labelled canvas |
+| Debug hooks | `window.snakeGame` (live instance), `window.SnakeGame` (class), `window.SNAKE_DIFFICULTIES`, `window.SNAKE_LANGUAGES` |
 
-## 3. 安装方法
+## 3. Installation
 
-**前置要求：无。** 技能本体是纯文本 + 一个 HTML 文件；游玩只需要现代浏览器（Chrome / Edge / Firefox / Safari）。可选：任意 Python 3，用于起本地静态服务。
+**Requirements: none.** The skill itself is plain text plus one HTML file; playing only needs a modern browser (Chrome / Edge / Firefox / Safari). Optional: any Python 3, if you want to serve the page over HTTP.
 
-### 方式 A：安装为 Agent 技能
+### Option A: install as an Agent skill
 
-1. 把整个技能目录复制到你所用 Agent 的技能目录下：
+1. Copy the whole skill directory into your agent's skills directory:
 
    ```bash
-   # 目标目录以宿主文档为准，例如 Codex 风格的工具读取 skills 目录下的技能包
-   cp -r skills/snake-game <你的技能目录>/snake-game
+   # The exact target depends on your host; Codex-style tools read skill
+   # packages from a skills directory, for example.
+   cp -r skills/snake-game <your-skills-dir>/snake-game
    ```
 
-2. 重新加载（或重启）宿主，让它发现新技能。
-3. 显式调用，或直接用自然语言描述需求让技能自动触发：
+2. Reload (or restart) the host so it discovers the new skill.
+3. Invoke it explicitly, or just describe what you want and let the skill trigger itself:
 
    ```text
-   $snake-game 生成一个可以直接打开的贪吃蛇网页游戏
+   $snake-game generate a snake game I can open and play right away
    ```
 
-### 方式 B：不安装，直接用
+### Option B: no installation
 
-技能目录里的基线文件本身就是完整游戏，复制或直接打开都能玩：
+The baseline file inside the skill directory *is* the complete game — copy it, or open it where it is:
 
 ```bash
 skills/snake-game/assets/snake-game.html
 ```
 
-### 方式 C：手动接入任意 AI
+### Option C: wire it into any AI manually
 
-把 `SKILL.md` 当作指令、`assets/snake-game.html` 当作模板交给模型即可，不依赖特定宿主。
+Hand `SKILL.md` to the model as instructions and `assets/snake-game.html` as the template. No specific host required.
 
-### 可选：校验安装是否完整
+### Optional: check that the install is complete
 
-技能包遵循 Agent Skill 规范，可用官方 skill-creator 的校验脚本自检（脚本需自备）：
+The package follows the Agent Skill layout, so you can validate it with the official skill-creator script (bring your own copy of the script):
 
 ```bash
-python quick_validate.py skills/snake-game
-# 期望输出：Skill is valid!
+python -X utf8 quick_validate.py skills/snake-game
+# expected output: Skill is valid!
+# On Windows with a non-UTF-8 locale, add -X utf8: the script reads SKILL.md with the default encoding.
 ```
 
-目录应包含：`SKILL.md`、`agents/openai.yaml`、`assets/snake-game.html`，且没有多余的 `scripts/`。
+The directory should contain `SKILL.md`, `agents/openai.yaml` and `assets/snake-game.html`, with no stray `scripts/`.
 
-## 4. 使用方法
+## 4. Usage
 
-### 4.1 让技能生成或改版
+### 4.1 Generate or customise with the skill
 
 ```text
-$snake-game 生成一个可以直接打开的贪吃蛇网页游戏
-帮我调整贪吃蛇：16×16 棋盘，难度分 3 档，做成暗色主题
-霓虹配色，格子大一点，难度来 5 档，按 P 暂停
+$snake-game generate a snake game I can open and play right away
+Adjust the snake game: 16×16 board, 3 difficulty levels, dark theme
+Neon colours, bigger cells, 5 difficulty levels, press P to pause
 ```
 
-技能只改你点名的部分，其余保持基线行为；交付时会给出文件路径、打开方式、玩法与本次改动。
+The skill changes only what you name and keeps the rest of the baseline behaviour; the hand-off tells you the file path, how to open it, how to play, and what changed.
 
-### 4.2 直接玩基线
+### 4.2 Play the baseline directly
 
 ```bash
-# 方式一：双击打开，无需任何环境
+# Option 1: double-click it — no environment needed
 skills/snake-game/assets/snake-game.html
 
-# 方式二：起一个本地静态服务
+# Option 2: serve it over HTTP
 cd skills/snake-game/assets
 python -m http.server 8000
-# 浏览器打开 http://localhost:8000/snake-game.html
+# then open http://localhost:8000/snake-game.html
 ```
 
-玩法：点 `开始游戏` 后，用 **方向键 / WASD** 转向，**空格** 暂停或继续，点 `选择难度：普通` 循环切换档位（也可以开局后随时切）。
+How to play: press `Start Game`, steer with the **arrow keys / WASD**, press **Space** to pause or resume, and click `Difficulty: Normal` to cycle through the levels (you can switch at any time, including mid-game). Use the language row under the buttons to switch the interface between English, 简体中文, Français, Русский and 日本語 — the page starts in English and remembers your choice.
 
-### 4.3 想改什么，改哪里
+### 4.3 What to change, and where
 
-| 想改的东西 | 改动位置 |
+| What you want to change | Where to change it |
 | --- | --- |
-| 棋盘格数与单格像素 | `new SnakeGame(canvas, { cols, rows, cell, difficultyIndex })`（画布尺寸运行时按格数重算，无需手改 HTML 的 `width`/`height`） |
-| 难度档位、速度、档位名称 | `DIFFICULTIES` 数组，`stepMs` 越小越快；增删档位后按钮自动循环 |
-| 配色 | `COLORS`（棋盘、网格线、外框、食物、蛇身、蛇头、箭头、眼睛） |
-| 方向键映射、暂停键 | `KEY_DIRECTIONS` 与 `keydown` 处理 |
+| Board size and cell pixel size | `new SnakeGame(canvas, { cols, rows, cell, difficultyIndex })` — the canvas is resized from the cell count at runtime, so the HTML `width`/`height` attributes need no hand-editing |
+| Difficulty levels, speeds and their names | `DIFFICULTIES` (ids and `stepMs`; smaller is faster) plus the `difficulty` map inside every language of `MESSAGES` — the button cycles whatever levels exist, and a missing name falls back to the level id |
+| Colours | `COLORS` (board, grid lines, border, food, body, head, arrows, eyes) |
+| UI wording, or adding a sixth language | `MESSAGES` for the text and `LANGUAGES` for the switcher row |
+| Arrow-key mapping and the pause key | `KEY_DIRECTIONS` and the `keydown` handler |
 
-### 4.4 在浏览器控制台调试
+### 4.4 Debug in the browser console
 
 ```js
-snakeGame.setDifficulty('insane'); // 切到最快档（也可传档位序号）
-snakeGame.tick();                  // 手动走一步
-snakeGame.snapshot();              // 查看状态、得分、蛇身坐标、当前速度
-snakeGame.render();                // 重绘当前局面
-snakeGame.start();                 // 重开一局
+snakeGame.setDifficulty('insane'); // jump to the fastest level (index also accepted)
+snakeGame.setLanguage('ja');       // switch the UI language
+snakeGame.tick();                  // advance one step by hand
+snakeGame.snapshot();              // state, score, snake coordinates, speed, language
+snakeGame.render();                // repaint the current position
+snakeGame.start();                 // start a fresh game
 ```
 
-## 5. 输入输出示例
+## 5. Input / output examples
 
-| # | 用户输入 | 技能输出 |
+| # | User input | Skill output |
 | --- | --- | --- |
-| 1 | 「做个贪吃蛇，打开就能玩」 | 把基线复制为 `index.html`，规格一字不改，附带打开方式与玩法说明 |
-| 2 | 「16×16 棋盘，难度分 3 档，做成暗色主题」（英文描述同样适用） | 同一页面改为 16 行 16 列、3 档速度（200 / 120 / 70 毫秒）、深色底 + 青绿蛇身，其余行为不变 |
-| 3 | 「霓虹配色，格子大一点，难度来 5 档，按 P 暂停」 | 12×12 大格棋盘、5 档难度、霓虹配色，暂停键改为 P（空格仍可用），提示行文案同步更新 |
-| 4 | 「把难度改成下拉框，再加个重新开始按钮」 | 在基线上替换难度控件与按钮，规格其余部分保持不变 |
-| 5 | 「帮我抓取某网页数据 / 生成一份 PDF / 做一套 Anki 卡」 | 说明不在本技能范围内，不产出游戏页面 |
+| 1 | "Make me a snake game I can open and play" | Copies the baseline to `index.html` with the spec untouched, plus how to open it and how to play |
+| 2 | "16×16 board, 3 difficulty levels, dark theme" (works in any language) | The same page with 16 rows × 16 columns, 3 speeds (200 / 120 / 70 ms), a dark background and an emerald snake; everything else unchanged |
+| 3 | "Neon colours, bigger cells, 5 difficulty levels, P to pause" | A 12×12 large-cell board, 5 difficulty levels, a neon palette, P as the pause key (Space still works), and the hint text updated to match |
+| 4 | "Turn the difficulty control into a dropdown and add a restart button" | The difficulty control and buttons are replaced on the baseline; the rest of the spec stays as it is |
+| 5 | "Scrape a web page for me / produce a PDF / build an Anki deck" | Explains that this is outside the skill's scope and does not produce a game page |
 
-第 1 类请求的典型产出：
+A typical result for request type 1:
 
 ```text
-index.html        # 单个自包含文件，双击即可游玩（约 580 行，0 个外部依赖）
+index.html        # one self-contained file, double-click to play (~830 lines, 0 external dependencies)
 ```
 
 ```text
-已生成 index.html（20×20 棋盘，默认难度「普通」）。
-打开方式：直接双击；或在本目录运行 python -m http.server 8000 后访问 http://localhost:8000/
-玩法：方向键 / WASD 转向，空格暂停，点「选择难度」切换档位（简单 220 → 地狱 60 毫秒每格）。
-本次未改动任何规格，与基线一致。
+Created index.html (20×20 board, default difficulty "Normal").
+To open: double-click it, or run python -m http.server 8000 in this directory and visit http://localhost:8000/
+Controls: arrow keys / WASD to turn, Space to pause, click "Difficulty" to cycle levels (Easy 220 → Insane 60 ms per cell).
+The interface ships in English by default and switches to 简体中文, Français, Русский or 日本語 from the language row.
+No spec changes were made; this matches the baseline.
 ```
 
-第 2、3 类请求只会落在上面「想改什么，改哪里」的四个改动点上，改完再逐条过一遍验收清单。
+Request types 2 and 3 only touch the change points listed under "What to change, and where", after which the acceptance checklist is walked through again.
 
-## 目录结构
+## Repository layout
 
 ```text
-README.md                  # 本文件
-LICENSE                    # MIT 许可证
+README.md                  # this file (English, the default)
+README.zh-CN.md            # 简体中文
+README.fr.md               # Français
+README.ru.md               # Русский
+README.ja.md               # 日本語
+index.html                 # single-page documentation: click a language to re-render in place
+LICENSE                    # MIT licence
 skills/snake-game/
-├── SKILL.md               # 技能说明：交付规格、工作流程、验收清单、边界
-├── agents/openai.yaml     # UI 元数据：display_name / short_description / default_prompt
-└── assets/snake-game.html # 完整可运行的基线游戏（582 行，含渲染、计分、难度、暂停、移动端与无障碍）
-docs/preview.png           # 上面那张预览图（真实浏览器渲染）
+├── SKILL.md               # English: delivery spec, workflow, acceptance checklist, boundaries
+├── SKILL.zh-CN.md         # 简体中文
+├── SKILL.fr.md            # Français
+├── SKILL.ru.md            # Русский
+├── SKILL.ja.md            # 日本語
+├── agents/openai.yaml     # UI metadata: display_name / short_description / default_prompt
+└── assets/snake-game.html # the complete runnable baseline game (rendering, score, difficulty, languages, pause, touch, accessibility)
+docs/preview.png           # preview above (English UI, real browser render)
+docs/preview.zh-CN.png     # the same board with the Chinese UI
 ```
 
-技能目录内没有 `scripts/`：这个任务不需要脚本，基线 HTML 本身就是可复制的交付模板。
+There is no `scripts/` inside the skill directory: this task does not need one, and the baseline HTML is itself the template you copy.
 
-## 验证情况
+## Verification
 
-- `SKILL.md` 与 `agents/openai.yaml` 通过官方 skill-creator 的 `quick_validate.py`（输出 `Skill is valid!`），并通过更严格的结构校验：主文件行数／字符预算、引用路径存在性、元数据字段、空目录检查全部 0 错误。
-- 游戏逻辑在真实 Chromium 内核（无头 Edge）跑 37 项断言，另用 Node + DOM 桩跑 53 项断言，覆盖：移动与吃食物、撞墙判负、撞到自己判负、填满棋盘通关、难度与速度映射、禁反向、转向缓冲、暂停与继续、最高分持久化与存储不可用降级、长卡顿不补步、画布绘制内容与配色。
-- 上表第 1、2、3 类请求都实际生成过页面并逐项复测，全部通过；预览图即真实浏览器渲染结果。
-- 未验证项：`localStorage` 在 `file://` 下的表现随浏览器而异（代码已做降级，不会报错）。
+- `SKILL.md` and `agents/openai.yaml` pass the official skill-creator `quick_validate.py` (output: `Skill is valid!`) and also a stricter structural check: main-file line and character budgets, referenced-path existence, metadata fields and empty-directory checks all report 0 errors.
+- The game logic was exercised with 24 assertions in a real Chromium engine (headless Edge) and 87 assertions under Node with a DOM stub, covering: movement and eating, wall collision, self collision, winning by filling the board, the difficulty-to-speed mapping, reversal rejection, turn buffering, pause and resume, high-score persistence with a safe fallback when storage is unavailable, the catch-up cap after a long stall, and the canvas contents and colours.
+- The single-page documentation in `index.html` was verified in the same headless browser with 22 assertions: it starts in English, one click re-renders the whole page in place without navigating, the URL hash follows, and the choice is stored and shared with the game.
+- The language layer is covered too: the default is English, all five languages render their own labels, switching is instant, the choice survives a reload, and an unknown stored value falls back to English.
+- Request types 1, 2 and 3 in the table above were actually generated and re-tested end to end; the preview images are real browser renders.
+- Not verified: `localStorage` behaviour under `file://` varies between browsers (the code degrades instead of throwing).
 
-## 许可证
+## License
 
-本项目采用 [MIT License](LICENSE)：可自由使用、修改、分发与商用，只需保留版权与许可声明。
+Released under the [MIT License](LICENSE): free to use, modify, distribute and use commercially, as long as the copyright and licence notice are kept.
 
 ```text
 Copyright (c) 2026 Snake-game Skill contributors
 ```
 
-想署自己的名字，改 `LICENSE` 里的这一行即可。
+To put your own name on it, edit that one line in `LICENSE`.
