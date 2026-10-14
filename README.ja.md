@@ -7,6 +7,14 @@
 ![スネークゲームのプレビュー](docs/preview.png)
 
 ## すぐに遊ぶ
+**スマートフォンでもパソコンでも、このリンクを開くだけ：**
+
+> 🎮 **https://wohui-netizen.github.io/wohui-Snake-game/skills/snake-game/assets/snake-game.html**
+>
+> ドキュメントサイト（クリックでその場で言語切替）：https://wohui-netizen.github.io/wohui-Snake-game/
+
+開いたら `Start Game` を押します。スマートフォンでは盤面をスワイプして方向転換、タップで一時停止します。
+
 
 インストールも AI もビルドも不要です。ゲームはこのリポジトリに**1 つのファイル**としてすでに入っています。
 

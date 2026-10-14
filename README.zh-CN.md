@@ -7,6 +7,14 @@
 ![贪吃蛇游戏预览](docs/preview.zh-CN.png)
 
 ## 马上开玩
+**手机、电脑都能直接打开这个网址：**
+
+> 🎮 **https://wohui-netizen.github.io/wohui-Snake-game/skills/snake-game/assets/snake-game.html**
+>
+> 文档站（点语言就地切换）：https://wohui-netizen.github.io/wohui-Snake-game/
+
+打开后点「Start Game」，手机上在棋盘上滑动转向、轻点暂停。
+
 
 不用安装、不用 AI、不用构建：游戏就是本仓库里的**一个文件**。
 

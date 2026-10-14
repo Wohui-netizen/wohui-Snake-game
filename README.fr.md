@@ -7,6 +7,14 @@ Un Agent Skill open source qui permet à une IA de vous livrer un jeu de serpent
 ![Aperçu du jeu de serpent](docs/preview.png)
 
 ## Jouer tout de suite
+**Sur n’importe quel téléphone ou ordinateur — ouvrez simplement ce lien :**
+
+> 🎮 **https://wohui-netizen.github.io/wohui-Snake-game/skills/snake-game/assets/snake-game.html**
+>
+> Site de documentation (un clic change la langue sur place) : https://wohui-netizen.github.io/wohui-Snake-game/
+
+Appuyez ensuite sur `Start Game`. Sur téléphone, balayez le plateau pour tourner et touchez pour mettre en pause.
+
 
 Aucune installation, aucune IA, aucune compilation : le jeu est déjà dans ce dépôt, en **un seul fichier**.
 

@@ -7,6 +7,14 @@ An open-source Agent Skill that makes an AI hand you a snake game **you can play
 ![Snake game preview](docs/preview.png)
 
 ## Play right now
+**Any phone or any computer — just open this link:**
+
+> 🎮 **https://wohui-netizen.github.io/wohui-Snake-game/skills/snake-game/assets/snake-game.html**
+>
+> Documentation site (click a language to switch in place): https://wohui-netizen.github.io/wohui-Snake-game/
+
+Then tap `Start Game`. On a phone, swipe on the board to steer and tap to pause.
+
 
 No installation, no AI, no build step: the game is already in this repository as **one single file**.
 
