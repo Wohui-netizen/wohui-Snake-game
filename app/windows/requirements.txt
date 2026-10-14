@@ -1,0 +1,6 @@
+# 贪吃蛇 v0.1.0 — Windows build dependencies
+#
+# pywebview opens the window using the Edge WebView2 runtime that ships with
+# Windows 10/11; PyInstaller freezes everything into one .exe.
+pywebview>=6.0
+pyinstaller>=6.0

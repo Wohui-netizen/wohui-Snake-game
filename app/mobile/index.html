@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>贪吃蛇 · Snake</title>
+<style>
+  :root {
+    --page-bg: #f7f8fa;
+    --text: #1f2933;
+    --score: #a33b3b;
+    --muted: #5b6472;
+    --board-bg: #85e8d0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--page-bg);
+    color: var(--text);
+    font-family: "Segoe UI", "Microsoft YaHei", "Yu Gothic UI", "Meiryo", system-ui, -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .game { width: min(480px, 92vw); padding: 14px 0 20px; }
+  .scoreboard {
+    margin: 0 0 10px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--score);
+    letter-spacing: 0.5px;
+  }
+  .board-wrap { position: relative; }
+  #board {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--board-bg);
+    border-radius: 4px;
+    touch-action: none;
+  }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 18px;
+    border-radius: 4px;
+    background: rgba(8, 38, 34, 0.55);
+    color: #fff;
+    text-align: center;
+    pointer-events: none;   /* the board underneath must stay touchable */
+  }
+  .overlay[hidden] { display: none; }
+  .overlay strong { font-size: 20px; }
+  .overlay span { font-size: 14px; opacity: 0.92; line-height: 1.5; }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 14px;
+  }
+  button {
+    min-width: 138px;
+    padding: 9px 18px;
+    font: inherit;
+    font-size: 15px;
+    color: var(--text);
+    background: #fff;
+    border: 1px solid #c8ccd4;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  button:hover { background: #f1f3f7; border-color: #8f97a5; }
+  button:active { background: #e7eaf0; }
+  button:focus-visible { outline: 2px solid #4f7df3; outline-offset: 2px; }
+  .hint {
+    margin: 12px 0 0;
+    min-height: 20px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .languages {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 2px 4px;
+    margin: 10px 0 0;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .languages button {
+    min-width: 0;
+    padding: 2px 5px;
+    font: inherit;
+    font-size: 13px;
+    color: #2f5fd0;
+    background: none;
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .languages button:hover { background: #eaeefb; text-decoration: underline; }
+  .languages button[aria-current="true"] {
+    color: var(--text);
+    font-weight: 700;
+    cursor: default;
+  }
+  .languages button[aria-current="true"]:hover { background: none; text-decoration: none; }
+  .languages span { color: #aab2bd; }
+  /* On-screen direction pad: the reliable fallback next to swiping. */
+  .dpad {
+    display: grid;
+    grid-template-columns: repeat(3, 54px);
+    grid-template-rows: repeat(2, 46px);
+    gap: 8px;
+    justify-content: center;
+    margin: 12px auto 0;
+    width: max-content;
+  }
+  .dpad button {
+    min-width: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    font-size: 17px;
+    line-height: 1;
+    color: var(--text);
+    background: #fff;
+    border: 1px solid #c8ccd4;
+    border-radius: 8px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .dpad button:hover { background: #f1f3f7; }
+  .dpad button:active { background: #e7eaf0; }
+  .dpad .up { grid-column: 2; grid-row: 1; }
+  .dpad .left { grid-column: 1; grid-row: 2; }
+  .dpad .down { grid-column: 2; grid-row: 2; }
+  .dpad .right { grid-column: 3; grid-row: 2; }
+  /* Hide the pad only on devices that have no touch screen at all. */
+  @media (hover: hover) and (pointer: fine) and (any-pointer: fine) and (not (any-pointer: coarse)) {
+    .dpad { display: none; }
+  }
+</style>
+<!-- PWA wiring for 贪吃蛇 v0.1.0 (injected by build.py) -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#85e8d0">
+<meta name="application-name" content="贪吃蛇">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="贪吃蛇">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+</head>
+<body>
+<main class="game">
+  <p class="scoreboard" id="scoreboard">Score: 0　Best: 0</p>
+  <div class="board-wrap">
+    <canvas id="board" width="480" height="480" role="img" aria-label="Snake game board"></canvas>
+    <div class="overlay" id="overlay" hidden>
+      <strong id="overlay-title">Snake</strong>
+      <span id="overlay-hint">Click "Start Game", or press an arrow key to start</span>
+    </div>
+  </div>
+  <div class="controls">
+    <button id="start-btn" type="button">Start Game</button>
+    <button id="difficulty-btn" type="button">Difficulty: Normal</button>
+  </div>
+  <div class="dpad" id="dpad" role="group" aria-label="Direction pad"></div>
+  <p class="hint" id="hint" role="status" aria-live="polite"></p>
+  <nav class="languages" id="languages" aria-label="Language"></nav>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  /* Board colours: light teal background, white grid lines, purple head,
+     dark red body, orange food. */
+  var COLORS = {
+    board: '#85e8d0',
+    grid: 'rgba(255, 255, 255, 0.8)',
+    border: 'rgba(13, 122, 112, 0.55)',
+    food: '#ff9f1c',
+    body: '#b23a3a',
+    head: '#7b4fd8',
+    arrow: 'rgba(64, 10, 10, 0.5)',
+    eye: '#f6f2ff'
+  };
+
+  /* Higher difficulty means a shorter step, so the snake moves faster.
+     Names live in MESSAGES.<language>.difficulty, keyed by these ids. */
+  var DIFFICULTIES = [
+    { id: 'easy', stepMs: 220 },
+    { id: 'normal', stepMs: 150 },
+    { id: 'hard', stepMs: 100 },
+    { id: 'insane', stepMs: 60 }
+  ];
+
+  var DEFAULT_LANGUAGE = 'en';
+
+  /* The switcher row, in display order. Add a language by adding one entry
+     here and one entry in MESSAGES below. */
+  var LANGUAGES = [
+    { code: 'en', name: 'English' },
+    { code: 'zh-CN', name: '简体中文' },
+    { code: 'fr', name: 'Français' },
+    { code: 'ru', name: 'Русский' },
+    { code: 'ja', name: '日本語' }
+  ];
+
+  /* Every visible string. The board drawing itself carries no text, so it is
+     language-neutral. {placeholders} are filled by SnakeGame#text(). */
+  var MESSAGES = {
+    en: {
+      title: 'Snake',
+      score: 'Score',
+      best: 'Best',
+      start: 'Start Game',
+      pause: 'Pause',
+      resume: 'Resume',
+      restart: 'Restart',
+      difficultyButton: 'Difficulty: {difficulty}',
+      difficulty: { easy: 'Easy', normal: 'Normal', hard: 'Hard', insane: 'Insane' },
+      idleHint: 'Click "Start Game", or press an arrow key to start',
+      paused: 'Paused',
+      pausedHint: 'Click "Resume" or press Space to continue',
+      gameOver: 'Game Over',
+      win: 'You Win!',
+      reasonWall: 'Hit the wall',
+      reasonSelf: 'Ran into yourself',
+      reasonWin: 'Every cell is filled',
+      reasonOther: 'Game over',
+      result: '{reason} — final score {score}',
+      hint: 'Difficulty: {difficulty}, one cell every {ms} ms (arrow keys / WASD to turn, Space to pause)',
+      canvasLabel: 'Snake game board',
+      languageLabel: 'Language',
+      up: 'Up', down: 'Down', left: 'Left', right: 'Right'
+    },
+    'zh-CN': {
+      title: '贪吃蛇',
+      score: '得分',
+      best: '历史最高分',
+      start: '开始游戏',
+      pause: '暂停游戏',
+      resume: '继续游戏',
+      restart: '重新开始',
+      difficultyButton: '选择难度：{difficulty}',
+      difficulty: { easy: '简单', normal: '普通', hard: '困难', insane: '地狱' },
+      idleHint: '点击「开始游戏」，或用方向键立即开始',
+      paused: '已暂停',
+      pausedHint: '点击「继续游戏」或按空格继续',
+      gameOver: '游戏结束',
+      win: '恭喜通关！',
+      reasonWall: '撞到墙壁，游戏失败',
+      reasonSelf: '撞到自己，游戏失败',
+      reasonWin: '全部格子已填满，恭喜通关',
+      reasonOther: '游戏结束',
+      result: '{reason}，最终得分 {score}',
+      hint: '当前难度：{difficulty}，每 {ms} 毫秒移动一格（方向键 / WASD 转向，空格暂停或继续）',
+      canvasLabel: '贪吃蛇游戏区域',
+      languageLabel: '语言',
+      up: '上', down: '下', left: '左', right: '右'
+    },
+    fr: {
+      title: 'Snake',
+      score: 'Score',
+      best: 'Meilleur score',
+      start: 'Jouer',
+      pause: 'Pause',
+      resume: 'Reprendre',
+      restart: 'Rejouer',
+      difficultyButton: 'Difficulté : {difficulty}',
+      difficulty: { easy: 'Facile', normal: 'Normal', hard: 'Difficile', insane: 'Enfer' },
+      idleHint: 'Cliquez sur « Jouer » ou appuyez sur une flèche pour commencer',
+      paused: 'En pause',
+      pausedHint: 'Cliquez sur « Reprendre » ou appuyez sur Espace',
+      gameOver: 'Partie terminée',
+      win: 'Victoire !',
+      reasonWall: 'Collision avec le mur',
+      reasonSelf: 'Collision avec votre propre corps',
+      reasonWin: 'Toutes les cases sont remplies',
+      reasonOther: 'Partie terminée',
+      result: '{reason} — score final {score}',
+      hint: 'Difficulté : {difficulty}, une case toutes les {ms} ms (flèches / WASD pour tourner, Espace pour la pause)',
+      canvasLabel: 'Plateau de jeu de snake',
+      languageLabel: 'Langue',
+      up: 'Haut', down: 'Bas', left: 'Gauche', right: 'Droite'
+    },
+    ru: {
+      title: 'Змейка',
+      score: 'Счёт',
+      best: 'Рекорд',
+      start: 'Начать игру',
+      pause: 'Пауза',
+      resume: 'Продолжить',
+      restart: 'Заново',
+      difficultyButton: 'Сложность: {difficulty}',
+      difficulty: { easy: 'Легко', normal: 'Обычно', hard: 'Сложно', insane: 'Ад' },
+      idleHint: 'Нажмите «Начать игру» или стрелку, чтобы начать',
+      paused: 'Пауза',
+      pausedHint: 'Нажмите «Продолжить» или пробел, чтобы продолжить',
+      gameOver: 'Игра окончена',
+      win: 'Победа!',
+      reasonWall: 'Удар в стену',
+      reasonSelf: 'Столкновение с собственным телом',
+      reasonWin: 'Все клетки заполнены',
+      reasonOther: 'Игра окончена',
+      result: '{reason} — итоговый счёт {score}',
+      hint: 'Сложность: {difficulty}, одна клетка каждые {ms} мс (стрелки / WASD — поворот, пробел — пауза)',
+      canvasLabel: 'Игровое поле «Змейка»',
+      languageLabel: 'Язык',
+      up: 'Вверх', down: 'Вниз', left: 'Влево', right: 'Вправо'
+    },
+    ja: {
+      title: 'スネーク',
+      score: 'スコア',
+      best: '最高スコア',
+      start: 'ゲーム開始',
+      pause: '一時停止',
+      resume: '再開',
+      restart: 'もう一度',
+      difficultyButton: '難易度：{difficulty}',
+      difficulty: { easy: 'かんたん', normal: 'ふつう', hard: 'むずかしい', insane: '地獄' },
+      idleHint: '「ゲーム開始」をクリックするか、矢印キーで始めます',
+      paused: '一時停止中',
+      pausedHint: '「再開」をクリックするか、スペースキーで再開します',
+      gameOver: 'ゲームオーバー',
+      win: 'クリア！',
+      reasonWall: '壁にぶつかりました',
+      reasonSelf: '自分にぶつかりました',
+      reasonWin: 'すべてのマスが埋まりました',
+      reasonOther: 'ゲームオーバー',
+      result: '{reason} — 最終スコア {score}',
+      hint: '難易度：{difficulty}、{ms} ミリ秒ごとに 1 マス（矢印キー / WASD で方向転換、スペースで一時停止）',
+      canvasLabel: 'スネークゲームの盤面',
+      languageLabel: '言語',
+      up: '上', down: '下', left: '左', right: '右'
+    }
+  };
+
+  var DIRECTIONS = {
+    up: { x: 0, y: -1 },
+    down: { x: 0, y: 1 },
+    left: { x: -1, y: 0 },
+    right: { x: 1, y: 0 }
+  };
+
+  var KEY_DIRECTIONS = {
+    arrowup: 'up', arrowdown: 'down', arrowleft: 'left', arrowright: 'right',
+    w: 'up', s: 'down', a: 'left', d: 'right'
+  };
+
+  function toDirection(value) {
+    if (typeof value === 'string') return DIRECTIONS[value] || null;
+    if (value && typeof value.x === 'number' && typeof value.y === 'number') {
+      if (Math.abs(value.x) + Math.abs(value.y) !== 1) return null;
+      return { x: value.x, y: value.y };
+    }
+    return null;
+  }
+
+  /* Accepts 'en', 'EN', 'zh-cn', ... and returns the canonical code, or null. */
+  function normalizeLanguage(code) {
+    if (typeof code !== 'string') return null;
+    var wanted = code.trim().toLowerCase();
+    for (var i = 0; i < LANGUAGES.length; i++) {
+      if (LANGUAGES[i].code.toLowerCase() === wanted) return LANGUAGES[i].code;
+    }
+    return null;
+  }
+
+  function SnakeGame(canvas, options) {
+    var config = options || {};
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.cols = config.cols || 20;
+    this.rows = config.rows || 20;
+    this.cell = config.cell || 24;
+    this.difficulties = config.difficulties || DIFFICULTIES;
+    this.difficultyIndex = typeof config.difficultyIndex === 'number' ? config.difficultyIndex : 1;
+    this.storageKey = config.storageKey || 'snake-game:best-score';
+    this.languageKey = config.languageStorageKey || 'snake-game:language';
+    this.language = normalizeLanguage(config.language) || this.readLanguage() || DEFAULT_LANGUAGE;
+    this.listeners = [];
+    this.best = this.readBest();
+    this.reset();
+    this.syncCanvasSize();
+    this.frame = this.frame.bind(this);
+    if (config.autoLoop !== false && typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(this.frame);
+    }
+  }
+
+  SnakeGame.prototype.difficulty = function () {
+    return this.difficulties[this.difficultyIndex];
+  };
+
+  SnakeGame.prototype.stepMs = function () {
+    return this.difficulty().stepMs;
+  };
+
+  SnakeGame.prototype.readBest = function () {
+    try {
+      var raw = window.localStorage.getItem(this.storageKey);
+      var value = parseInt(raw, 10);
+      return value > 0 ? value : 0;
+    } catch (error) {
+      return 0;
+    }
+  };
+
+  SnakeGame.prototype.saveBest = function (value) {
+    try {
+      window.localStorage.setItem(this.storageKey, String(value));
+    } catch (error) {
+      /* Private mode or file:// limits: skip persistence rather than fail. */
+    }
+  };
+
+  SnakeGame.prototype.readLanguage = function () {
+    try {
+      return normalizeLanguage(window.localStorage.getItem(this.languageKey));
+    } catch (error) {
+      return null;
+    }
+  };
+
+  SnakeGame.prototype.saveLanguage = function (code) {
+    try {
+      window.localStorage.setItem(this.languageKey, code);
+    } catch (error) {
+      /* Keep the choice for this session only when storage is unavailable. */
+    }
+  };
+
+  SnakeGame.prototype.setLanguage = function (code) {
+    var next = normalizeLanguage(code);
+    if (!next || next === this.language) return;
+    this.language = next;
+    this.saveLanguage(next);
+    this.emit();
+  };
+
+  SnakeGame.prototype.messages = function () {
+    return MESSAGES[this.language] || MESSAGES[DEFAULT_LANGUAGE];
+  };
+
+  /* Look up a string in the current language, fill {placeholders}, and fall
+     back to English (then to the raw key) so a partial translation still runs. */
+  SnakeGame.prototype.text = function (key, values) {
+    var template = this.messages()[key];
+    if (typeof template !== 'string') template = MESSAGES[DEFAULT_LANGUAGE][key];
+    if (typeof template !== 'string') return key;
+    if (!values) return template;
+    return template.replace(/\{(\w+)\}/g, function (match, name) {
+      return values[name] === undefined ? match : values[name];
+    });
+  };
+
+  SnakeGame.prototype.difficultyLabel = function (index) {
+    var level = this.difficulties[typeof index === 'number' ? index : this.difficultyIndex];
+    if (!level) return '';
+    var names = this.messages().difficulty;
+    return (names && names[level.id]) || level.id;
+  };
+
+  SnakeGame.prototype.syncCanvasSize = function () {
+    var ratio = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+    var width = this.cols * this.cell;
+    var height = this.rows * this.cell;
+    this.canvas.width = Math.round(width * ratio);
+    this.canvas.height = Math.round(height * ratio);
+    if (this.ctx.setTransform) this.ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    this.width = width;
+    this.height = height;
+  };
+
+  SnakeGame.prototype.reset = function () {
+    var centerX = Math.floor(this.cols / 2);
+    var centerY = Math.floor(this.rows / 2);
+    this.snake = [
+      { x: centerX, y: centerY },
+      { x: centerX - 1, y: centerY },
+      { x: centerX - 2, y: centerY }
+    ];
+    this.direction = { x: 1, y: 0 };
+    this.queued = [];
+    this.score = 0;
+    this.state = 'idle';
+    this.endReason = null;
+    this.food = this.spawnFood();
+    this.accumulator = 0;
+    this.lastTimestamp = null;
+    this.emit();
+  };
+
+  SnakeGame.prototype.start = function () {
+    this.reset();
+    this.state = 'running';
+    this.lastTimestamp = null;
+    this.accumulator = 0;
+    this.emit();
+  };
+
+  SnakeGame.prototype.pause = function () {
+    if (this.state !== 'running') return;
+    this.state = 'paused';
+    this.emit();
+  };
+
+  SnakeGame.prototype.resume = function () {
+    if (this.state !== 'paused') return;
+    this.state = 'running';
+    this.lastTimestamp = null;
+    this.accumulator = 0;
+    this.emit();
+  };
+
+  SnakeGame.prototype.toggleStart = function () {
+    if (this.state === 'running') this.pause();
+    else if (this.state === 'paused') this.resume();
+    else this.start();
+  };
+
+  SnakeGame.prototype.setDirection = function (input) {
+    var next = toDirection(input);
+    if (!next) return;
+    var reference = this.queued.length ? this.queued[this.queued.length - 1] : this.direction;
+    if (next.x === -reference.x && next.y === -reference.y) return;
+    if (next.x === reference.x && next.y === reference.y) return;
+    if (this.queued.length >= 2) return;
+    this.queued.push(next);
+  };
+
+  SnakeGame.prototype.setDifficulty = function (value) {
+    var index = this.difficultyIndex;
+    if (typeof value === 'number') {
+      index = Math.max(0, Math.min(this.difficulties.length - 1, value));
+    } else {
+      for (var i = 0; i < this.difficulties.length; i++) {
+        if (this.difficulties[i].id === value) index = i;
+      }
+    }
+    if (index === this.difficultyIndex) return;
+    this.difficultyIndex = index;
+    this.accumulator = 0;
+    this.emit();
+  };
+
+  SnakeGame.prototype.nextDifficulty = function () {
+    this.setDifficulty((this.difficultyIndex + 1) % this.difficulties.length);
+  };
+
+  SnakeGame.prototype.spawnFood = function () {
+    var taken = {};
+    for (var i = 0; i < this.snake.length; i++) {
+      taken[this.snake[i].x + ',' + this.snake[i].y] = true;
+    }
+    var free = [];
+    for (var y = 0; y < this.rows; y++) {
+      for (var x = 0; x < this.cols; x++) {
+        if (!taken[x + ',' + y]) free.push({ x: x, y: y });
+      }
+    }
+    if (!free.length) return null;
+    return free[Math.floor(Math.random() * free.length)];
+  };
+
+  SnakeGame.prototype.end = function (reason) {
+    this.state = 'over';
+    this.endReason = reason;
+    if (this.score > this.best) {
+      this.best = this.score;
+      this.saveBest(this.best);
+    }
+    this.emit();
+  };
+
+  SnakeGame.prototype.tick = function () {
+    if (this.state !== 'running') return;
+
+    if (this.queued.length) {
+      var wanted = this.queued.shift();
+      if (!(wanted.x === -this.direction.x && wanted.y === -this.direction.y)) {
+        this.direction = wanted;
+      }
+    }
+
+    var head = this.snake[0];
+    var nextX = head.x + this.direction.x;
+    var nextY = head.y + this.direction.y;
+
+    if (nextX < 0 || nextY < 0 || nextX >= this.cols || nextY >= this.rows) {
+      this.end('wall');
+      return;
+    }
+
+    var eating = !!this.food && nextX === this.food.x && nextY === this.food.y;
+    var body = eating ? this.snake : this.snake.slice(0, -1);
+    for (var i = 0; i < body.length; i++) {
+      if (body[i].x === nextX && body[i].y === nextY) {
+        this.end('self');
+        return;
+      }
+    }
+
+    this.snake.unshift({ x: nextX, y: nextY });
+    if (eating) {
+      this.score += 1;
+      this.food = this.spawnFood();
+      if (!this.food) {
+        this.end('win');
+        return;
+      }
+    } else {
+      this.snake.pop();
+    }
+    this.emit();
+  };
+
+  SnakeGame.prototype.frame = function (timestamp) {
+    if (this.state === 'running') {
+      if (this.lastTimestamp === null) this.lastTimestamp = timestamp;
+      var delta = Math.min(timestamp - this.lastTimestamp, this.stepMs() * 4);
+      this.lastTimestamp = timestamp;
+      this.accumulator += Math.max(0, delta);
+      while (this.state === 'running' && this.accumulator >= this.stepMs()) {
+        this.accumulator -= this.stepMs();
+        this.tick();
+      }
+    } else {
+      this.lastTimestamp = null;
+      this.accumulator = 0;
+    }
+    this.render();
+    if (typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(this.frame);
+    }
+  };
+
+  SnakeGame.prototype.snapshot = function () {
+    return {
+      state: this.state,
+      reason: this.endReason,
+      score: this.score,
+      best: this.best,
+      length: this.snake.length,
+      cells: this.cols * this.rows,
+      stepMs: this.stepMs(),
+      difficulty: this.difficulty(),
+      difficultyIndex: this.difficultyIndex,
+      difficultyLabel: this.difficultyLabel(),
+      language: this.language,
+      snake: this.snake.map(function (segment) {
+        return { x: segment.x, y: segment.y };
+      }),
+      food: this.food ? { x: this.food.x, y: this.food.y } : null
+    };
+  };
+
+  SnakeGame.prototype.subscribe = function (listener) {
+    if (typeof listener !== 'function') return function () {};
+    this.listeners.push(listener);
+    listener(this.snapshot());
+    var self = this;
+    return function () {
+      var index = self.listeners.indexOf(listener);
+      if (index >= 0) self.listeners.splice(index, 1);
+    };
+  };
+
+  SnakeGame.prototype.emit = function () {
+    var snapshot = this.snapshot();
+    for (var i = 0; i < this.listeners.length; i++) {
+      this.listeners[i](snapshot);
+    }
+  };
+
+  SnakeGame.prototype.roundRect = function (x, y, width, height, radius) {
+    var ctx = this.ctx;
+    var r = Math.min(radius, width / 2, height / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + width - r, y);
+    ctx.arcTo(x + width, y, x + width, y + r, r);
+    ctx.lineTo(x + width, y + height - r);
+    ctx.arcTo(x + width, y + height, x + width - r, y + height, r);
+    ctx.lineTo(x + r, y + height);
+    ctx.arcTo(x, y + height, x, y + height - r, r);
+    ctx.lineTo(x, y + r);
+    ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath();
+  };
+
+  SnakeGame.prototype.arrowDirection = function (index) {
+    if (index === 0) return this.direction;
+    var ahead = this.snake[index - 1];
+    var here = this.snake[index];
+    return { x: Math.sign(ahead.x - here.x), y: Math.sign(ahead.y - here.y) };
+  };
+
+  SnakeGame.prototype.render = function () {
+    var ctx = this.ctx;
+    var cell = this.cell;
+    var width = this.cols * cell;
+    var height = this.rows * cell;
+    var i;
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = COLORS.board;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = COLORS.grid;
+    ctx.beginPath();
+    for (i = 0; i <= this.cols; i++) {
+      var px = Math.round(i * cell) + 0.5;
+      ctx.moveTo(px, 0);
+      ctx.lineTo(px, height);
+    }
+    for (i = 0; i <= this.rows; i++) {
+      var py = Math.round(i * cell) + 0.5;
+      ctx.moveTo(0, py);
+      ctx.lineTo(width, py);
+    }
+    ctx.stroke();
+
+    if (this.food) {
+      this.roundRect(this.food.x * cell + 3, this.food.y * cell + 3, cell - 6, cell - 6, 4);
+      ctx.fillStyle = COLORS.food;
+      ctx.fill();
+    }
+
+    for (i = this.snake.length - 1; i >= 0; i--) {
+      var segment = this.snake[i];
+      var left = segment.x * cell + 1.5;
+      var top = segment.y * cell + 1.5;
+      this.roundRect(left, top, cell - 3, cell - 3, 3);
+      ctx.fillStyle = i === 0 ? COLORS.head : COLORS.body;
+      ctx.fill();
+      if (i > 0) this.drawArrow(segment, this.arrowDirection(i));
+    }
+
+    if (this.snake.length) this.drawEyes(this.snake[0]);
+
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = COLORS.border;
+    ctx.strokeRect(1, 1, width - 2, height - 2);
+  };
+
+  SnakeGame.prototype.drawArrow = function (segment, direction) {
+    var ctx = this.ctx;
+    var cell = this.cell;
+    var centerX = segment.x * cell + cell / 2;
+    var centerY = segment.y * cell + cell / 2;
+    var size = cell * 0.22;
+    var perpendicularX = -direction.y;
+    var perpendicularY = direction.x;
+
+    ctx.beginPath();
+    ctx.moveTo(centerX + direction.x * size, centerY + direction.y * size);
+    ctx.lineTo(
+      centerX - direction.x * size * 0.7 + perpendicularX * size * 0.9,
+      centerY - direction.y * size * 0.7 + perpendicularY * size * 0.9
+    );
+    ctx.lineTo(
+      centerX - direction.x * size * 0.7 - perpendicularX * size * 0.9,
+      centerY - direction.y * size * 0.7 - perpendicularY * size * 0.9
+    );
+    ctx.closePath();
+    ctx.fillStyle = COLORS.arrow;
+    ctx.fill();
+  };
+
+  SnakeGame.prototype.drawEyes = function (head) {
+    var ctx = this.ctx;
+    var cell = this.cell;
+    var offset = cell * 0.2;
+    var forward = cell * 0.18;
+    var radius = Math.max(1.2, cell * 0.07);
+    var perpendicularX = -this.direction.y;
+    var perpendicularY = this.direction.x;
+    var baseX = head.x * cell + cell / 2 + this.direction.x * forward;
+    var baseY = head.y * cell + cell / 2 + this.direction.y * forward;
+    var eyes = [
+      { x: baseX + perpendicularX * offset, y: baseY + perpendicularY * offset },
+      { x: baseX - perpendicularX * offset, y: baseY - perpendicularY * offset }
+    ];
+    ctx.fillStyle = COLORS.eye;
+    for (var i = 0; i < eyes.length; i++) {
+      ctx.beginPath();
+      ctx.arc(eyes[i].x, eyes[i].y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  };
+
+  var REASON_MESSAGES = { wall: 'reasonWall', self: 'reasonSelf', win: 'reasonWin' };
+
+  function boot() {
+    var canvas = document.getElementById('board');
+    if (!canvas || !canvas.getContext) return;
+
+    var scoreboard = document.getElementById('scoreboard');
+    var overlay = document.getElementById('overlay');
+    var overlayTitle = document.getElementById('overlay-title');
+    var overlayHint = document.getElementById('overlay-hint');
+    var startButton = document.getElementById('start-btn');
+    var difficultyButton = document.getElementById('difficulty-btn');
+    var hint = document.getElementById('hint');
+    var languageNav = document.getElementById('languages');
+
+    var game = new SnakeGame(canvas, { cols: 20, rows: 20, cell: 24, difficultyIndex: 1 });
+    window.snakeGame = game;
+
+    /* Every input source (keyboard, swipe, on-screen pad) goes through here:
+       it starts a game when one is needed, then turns the snake. */
+    function steer(input) {
+      if (game.state === 'idle' || game.state === 'over') game.start();
+      game.setDirection(input);
+    }
+
+    /* Build the language switcher row from LANGUAGES. */
+    var languageButtons = [];
+    if (languageNav) {
+      LANGUAGES.forEach(function (language, index) {
+        if (index > 0) {
+          var separator = document.createElement('span');
+          separator.textContent = '·';
+          separator.setAttribute('aria-hidden', 'true');
+          languageNav.appendChild(separator);
+        }
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = language.name;
+        button.setAttribute('lang', language.code);
+        button.addEventListener('click', function () {
+          game.setLanguage(language.code);
+        });
+        languageNav.appendChild(button);
+        languageButtons.push(button);
+      });
+    }
+
+    /* Build the on-screen direction pad (CSS hides it where a mouse exists). */
+    var dpad = document.getElementById('dpad');
+    var dpadButtons = [];
+    [['up', '▲'], ['left', '◀'], ['down', '▼'], ['right', '▶']].forEach(function (entry) {
+      if (!dpad) return;
+      var input = entry[0];
+      var button = document.createElement('button');
+      var handled = false;
+      button.type = 'button';
+      button.className = input;
+      button.textContent = entry[1];
+      button.addEventListener('pointerdown', function (event) {
+        handled = true;
+        event.preventDefault();
+        steer(input);
+      });
+      button.addEventListener('click', function (event) {
+        event.preventDefault();
+        if (handled) { handled = false; return; }   /* pointerdown already steered */
+        steer(input);
+      });
+      dpad.appendChild(button);
+      dpadButtons.push({ button: button, input: input });
+    });
+
+    game.subscribe(function (snapshot) {
+      var t = function (key, values) { return game.text(key, values); };
+      var reasonKey = REASON_MESSAGES[snapshot.reason] || 'reasonOther';
+
+      document.title = t('title');
+      if (document.documentElement) document.documentElement.lang = snapshot.language;
+      canvas.setAttribute('aria-label', t('canvasLabel'));
+      if (languageNav) languageNav.setAttribute('aria-label', t('languageLabel'));
+      for (var i = 0; i < languageButtons.length; i++) {
+        languageButtons[i].setAttribute(
+          'aria-current',
+          LANGUAGES[i].code === snapshot.language ? 'true' : 'false'
+        );
+      }
+      for (var b = 0; b < dpadButtons.length; b++) {
+        dpadButtons[b].button.setAttribute('aria-label', t(dpadButtons[b].input));
+      }
+
+      scoreboard.textContent = t('score') + ': ' + snapshot.score + '　' + t('best') + ': ' + snapshot.best;
+      difficultyButton.textContent = t('difficultyButton', { difficulty: snapshot.difficultyLabel });
+      startButton.textContent = snapshot.state === 'running' ? t('pause')
+        : snapshot.state === 'paused' ? t('resume')
+        : snapshot.state === 'over' ? t('restart') : t('start');
+
+      if (snapshot.state === 'idle') {
+        overlayTitle.textContent = t('title');
+        overlayHint.textContent = t('idleHint');
+        overlay.hidden = false;
+      } else if (snapshot.state === 'paused') {
+        overlayTitle.textContent = t('paused');
+        overlayHint.textContent = t('pausedHint');
+        overlay.hidden = false;
+      } else if (snapshot.state === 'over') {
+        overlayTitle.textContent = snapshot.reason === 'win' ? t('win') : t('gameOver');
+        overlayHint.textContent = t('result', { reason: t(reasonKey), score: snapshot.score });
+        overlay.hidden = false;
+      } else {
+        overlay.hidden = true;
+      }
+
+      hint.textContent = t('hint', { difficulty: snapshot.difficultyLabel, ms: snapshot.stepMs });
+    });
+
+    startButton.addEventListener('click', function () {
+      game.toggleStart();
+    });
+
+    difficultyButton.addEventListener('click', function () {
+      game.nextDifficulty();
+    });
+
+    window.addEventListener('keydown', function (event) {
+      var tag = (event.target && event.target.tagName ? event.target.tagName : '').toLowerCase();
+      if (tag === 'button' || tag === 'select' || tag === 'input' || tag === 'textarea') return;
+
+      var key = String(event.key || '').toLowerCase();
+      if (key === ' ' || key === 'spacebar' || event.code === 'Space') {
+        event.preventDefault();
+        game.toggleStart();
+        return;
+      }
+
+      var wanted = KEY_DIRECTIONS[key];
+      if (!wanted) return;
+      event.preventDefault();
+      steer(wanted);
+    });
+
+    /* Touch: turn while the finger is still moving, so the snake reacts at once.
+       A short movement counts as a tap: start, pause or resume. */
+    var TURN_STEP = 22;   /* px of travel before another turn is queued */
+    var TAP_SLOP = 12;    /* below this the gesture is a tap */
+    var touchStart = null;
+    var touchLast = null;
+
+    function touchPoint(touch) {
+      return { x: touch.clientX, y: touch.clientY };
+    }
+
+    function directionOf(deltaX, deltaY) {
+      if (Math.abs(deltaX) > Math.abs(deltaY)) return deltaX > 0 ? 'right' : 'left';
+      return deltaY > 0 ? 'down' : 'up';
+    }
+
+    canvas.addEventListener('touchstart', function (event) {
+      var touch = event.changedTouches[0];
+      if (!touch) return;
+      touchStart = touchPoint(touch);
+      touchLast = touchStart;
+    }, { passive: true });
+
+    canvas.addEventListener('touchmove', function (event) {
+      if (!touchStart) return;
+      var touch = event.changedTouches[0];
+      if (!touch) return;
+      var point = touchPoint(touch);
+      var deltaX = point.x - touchLast.x;
+      var deltaY = point.y - touchLast.y;
+      if (Math.abs(deltaX) < TURN_STEP && Math.abs(deltaY) < TURN_STEP) return;
+      event.preventDefault();
+      steer(directionOf(deltaX, deltaY));
+      touchLast = point;
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', function (event) {
+      if (!touchStart) return;
+      var touch = event.changedTouches[0];
+      var travelled = touch ? Math.max(
+        Math.abs(touch.clientX - touchStart.x),
+        Math.abs(touch.clientY - touchStart.y)
+      ) : TAP_SLOP;
+      touchStart = null;
+      touchLast = null;
+      if (travelled >= TAP_SLOP) return;   /* that was a swipe, not a tap */
+      event.preventDefault();
+      game.toggleStart();
+    }, { passive: false });
+
+    canvas.addEventListener('touchcancel', function () {
+      touchStart = null;
+      touchLast = null;
+    });
+
+    game.render();
+  }
+
+  window.SnakeGame = SnakeGame;
+  window.SNAKE_DIFFICULTIES = DIFFICULTIES;
+  window.SNAKE_LANGUAGES = LANGUAGES;
+  window.SNAKE_MESSAGES = MESSAGES;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+<!-- PWA wiring for 贪吃蛇 v0.1.0 (injected by build.py) -->
+<div id="install-bar" hidden>
+  <button id="install-btn" type="button">安装到桌面</button>
+  <span id="install-hint" hidden>iPhone：点「分享」→「添加到主屏幕」</span>
+</div>
+<style>
+  #install-bar {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    justify-content: center; margin: 14px auto 0; font-size: 13px; color: #5b6472;
+  }
+  #install-bar[hidden] { display: none; }
+  #install-bar button {
+    min-width: 0; padding: 8px 16px; font: inherit; font-size: 14px;
+    color: #1f2933; background: #fff; border: 1px solid #c8ccd4;
+    border-radius: 6px; cursor: pointer;
+  }
+  #install-bar button:hover { background: #f1f3f7; }
+  #install-bar span { line-height: 1.5; }
+</style>
+<script>
+(function () {
+  'use strict';
+
+  /* Offline cache: only over http(s), never for a plain file:// open. */
+  if ('serviceWorker' in navigator && /^https?:$/.test(window.location.protocol)) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
+
+  var TEXT = {
+    en: { install: 'Install app', ios: 'iPhone: Share → Add to Home Screen' },
+    'zh-CN': { install: '安装到桌面', ios: 'iPhone：点「分享」→「添加到主屏幕」' },
+    fr: { install: "Installer l'application", ios: "iPhone : Partager → Sur l'écran d'accueil" },
+    ru: { install: 'Установить приложение', ios: 'iPhone: «Поделиться» → «На экран «Домой»' },
+    ja: { install: 'アプリをインストール', ios: 'iPhone：共有 → ホーム画面に追加' }
+  };
+
+  var bar = document.getElementById('install-bar');
+  var button = document.getElementById('install-btn');
+  var hint = document.getElementById('install-hint');
+  var host = document.querySelector('main.game');
+  if (host && bar) host.appendChild(bar);
+
+  function localise(code) {
+    var text = TEXT[code] || TEXT.en;
+    if (button) button.textContent = text.install;
+    if (hint) hint.textContent = text.ios;
+  }
+  localise('en');
+  if (window.snakeGame && typeof window.snakeGame.subscribe === 'function') {
+    window.snakeGame.subscribe(function (snapshot) { localise(snapshot.language); });
+  }
+
+  var standalone = window.matchMedia('(display-mode: standalone)').matches ||
+                   window.navigator.standalone === true;
+  if (standalone) return;                       /* already installed */
+
+  var ua = navigator.userAgent || '';
+  var iOS = /iPad|iPhone|iPod/.test(ua) ||
+            (/Macintosh/.test(ua) && 'ontouchend' in document);
+
+  window.addEventListener('beforeinstallprompt', function (event) {
+    event.preventDefault();
+    if (!bar) return;
+    bar.hidden = false;
+    if (button) {
+      button.hidden = false;
+      button.onclick = function () { bar.hidden = true; event.prompt(); };
+    }
+  });
+
+  window.addEventListener('appinstalled', function () {
+    if (bar) bar.hidden = true;
+  });
+
+  if (iOS && bar) {                             /* Safari never fires the prompt */
+    bar.hidden = false;
+    if (button) button.hidden = true;
+    if (hint) hint.hidden = false;
+  }
+})();
+</script>
+</body>
+</html>

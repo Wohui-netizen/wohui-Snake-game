@@ -1,0 +1,6 @@
+# build output and the page copied in from the skill asset
+.venv/
+build/
+dist/
+*.spec
+snake-game.html

@@ -1,0 +1,22 @@
+{
+  "name": "贪吃蛇 · Snake",
+  "short_name": "贪吃蛇",
+  "description": "打开就能玩的贪吃蛇：五种界面语言、四档难度、离线可用。",
+  "version": "0.1.0",
+  "id": "snake-game-v0.1.0",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#f7f8fa",
+  "theme_color": "#85e8d0",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

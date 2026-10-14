@@ -1,0 +1,83 @@
+<!-- PWA wiring for 贪吃蛇 v0.1.0 (injected by build.py) -->
+<div id="install-bar" hidden>
+  <button id="install-btn" type="button">安装到桌面</button>
+  <span id="install-hint" hidden>iPhone：点「分享」→「添加到主屏幕」</span>
+</div>
+<style>
+  #install-bar {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    justify-content: center; margin: 14px auto 0; font-size: 13px; color: #5b6472;
+  }
+  #install-bar[hidden] { display: none; }
+  #install-bar button {
+    min-width: 0; padding: 8px 16px; font: inherit; font-size: 14px;
+    color: #1f2933; background: #fff; border: 1px solid #c8ccd4;
+    border-radius: 6px; cursor: pointer;
+  }
+  #install-bar button:hover { background: #f1f3f7; }
+  #install-bar span { line-height: 1.5; }
+</style>
+<script>
+(function () {
+  'use strict';
+
+  /* Offline cache: only over http(s), never for a plain file:// open. */
+  if ('serviceWorker' in navigator && /^https?:$/.test(window.location.protocol)) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
+
+  var TEXT = {
+    en: { install: 'Install app', ios: 'iPhone: Share → Add to Home Screen' },
+    'zh-CN': { install: '安装到桌面', ios: 'iPhone：点「分享」→「添加到主屏幕」' },
+    fr: { install: "Installer l'application", ios: "iPhone : Partager → Sur l'écran d'accueil" },
+    ru: { install: 'Установить приложение', ios: 'iPhone: «Поделиться» → «На экран «Домой»' },
+    ja: { install: 'アプリをインストール', ios: 'iPhone：共有 → ホーム画面に追加' }
+  };
+
+  var bar = document.getElementById('install-bar');
+  var button = document.getElementById('install-btn');
+  var hint = document.getElementById('install-hint');
+  var host = document.querySelector('main.game');
+  if (host && bar) host.appendChild(bar);
+
+  function localise(code) {
+    var text = TEXT[code] || TEXT.en;
+    if (button) button.textContent = text.install;
+    if (hint) hint.textContent = text.ios;
+  }
+  localise('en');
+  if (window.snakeGame && typeof window.snakeGame.subscribe === 'function') {
+    window.snakeGame.subscribe(function (snapshot) { localise(snapshot.language); });
+  }
+
+  var standalone = window.matchMedia('(display-mode: standalone)').matches ||
+                   window.navigator.standalone === true;
+  if (standalone) return;                       /* already installed */
+
+  var ua = navigator.userAgent || '';
+  var iOS = /iPad|iPhone|iPod/.test(ua) ||
+            (/Macintosh/.test(ua) && 'ontouchend' in document);
+
+  window.addEventListener('beforeinstallprompt', function (event) {
+    event.preventDefault();
+    if (!bar) return;
+    bar.hidden = false;
+    if (button) {
+      button.hidden = false;
+      button.onclick = function () { bar.hidden = true; event.prompt(); };
+    }
+  });
+
+  window.addEventListener('appinstalled', function () {
+    if (bar) bar.hidden = true;
+  });
+
+  if (iOS && bar) {                             /* Safari never fires the prompt */
+    bar.hidden = false;
+    if (button) button.hidden = true;
+    if (hint) hint.hidden = false;
+  }
+})();
+</script>
