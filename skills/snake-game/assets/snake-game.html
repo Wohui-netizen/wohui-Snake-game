@@ -55,6 +55,7 @@
     background: rgba(8, 38, 34, 0.55);
     color: #fff;
     text-align: center;
+    pointer-events: none;   /* the board underneath must stay touchable */
   }
   .overlay[hidden] { display: none; }
   .overlay strong { font-size: 20px; }
@@ -117,6 +118,40 @@
   }
   .languages button[aria-current="true"]:hover { background: none; text-decoration: none; }
   .languages span { color: #aab2bd; }
+  /* On-screen direction pad: the reliable fallback next to swiping. */
+  .dpad {
+    display: grid;
+    grid-template-columns: repeat(3, 54px);
+    grid-template-rows: repeat(2, 46px);
+    gap: 8px;
+    justify-content: center;
+    margin: 12px auto 0;
+    width: max-content;
+  }
+  .dpad button {
+    min-width: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    font-size: 17px;
+    line-height: 1;
+    color: var(--text);
+    background: #fff;
+    border: 1px solid #c8ccd4;
+    border-radius: 8px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .dpad button:hover { background: #f1f3f7; }
+  .dpad button:active { background: #e7eaf0; }
+  .dpad .up { grid-column: 2; grid-row: 1; }
+  .dpad .left { grid-column: 1; grid-row: 2; }
+  .dpad .down { grid-column: 2; grid-row: 2; }
+  .dpad .right { grid-column: 3; grid-row: 2; }
+  /* Hide the pad only on devices that have no touch screen at all. */
+  @media (hover: hover) and (pointer: fine) and (any-pointer: fine) and (not (any-pointer: coarse)) {
+    .dpad { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -133,6 +168,7 @@
     <button id="start-btn" type="button">Start Game</button>
     <button id="difficulty-btn" type="button">Difficulty: Normal</button>
   </div>
+  <div class="dpad" id="dpad" role="group" aria-label="Direction pad"></div>
   <p class="hint" id="hint" role="status" aria-live="polite"></p>
   <nav class="languages" id="languages" aria-label="Language"></nav>
 </main>
@@ -200,7 +236,8 @@
       result: '{reason} — final score {score}',
       hint: 'Difficulty: {difficulty}, one cell every {ms} ms (arrow keys / WASD to turn, Space to pause)',
       canvasLabel: 'Snake game board',
-      languageLabel: 'Language'
+      languageLabel: 'Language',
+      up: 'Up', down: 'Down', left: 'Left', right: 'Right'
     },
     'zh-CN': {
       title: '贪吃蛇',
@@ -224,7 +261,8 @@
       result: '{reason}，最终得分 {score}',
       hint: '当前难度：{difficulty}，每 {ms} 毫秒移动一格（方向键 / WASD 转向，空格暂停或继续）',
       canvasLabel: '贪吃蛇游戏区域',
-      languageLabel: '语言'
+      languageLabel: '语言',
+      up: '上', down: '下', left: '左', right: '右'
     },
     fr: {
       title: 'Snake',
@@ -248,7 +286,8 @@
       result: '{reason} — score final {score}',
       hint: 'Difficulté : {difficulty}, une case toutes les {ms} ms (flèches / WASD pour tourner, Espace pour la pause)',
       canvasLabel: 'Plateau de jeu de snake',
-      languageLabel: 'Langue'
+      languageLabel: 'Langue',
+      up: 'Haut', down: 'Bas', left: 'Gauche', right: 'Droite'
     },
     ru: {
       title: 'Змейка',
@@ -272,7 +311,8 @@
       result: '{reason} — итоговый счёт {score}',
       hint: 'Сложность: {difficulty}, одна клетка каждые {ms} мс (стрелки / WASD — поворот, пробел — пауза)',
       canvasLabel: 'Игровое поле «Змейка»',
-      languageLabel: 'Язык'
+      languageLabel: 'Язык',
+      up: 'Вверх', down: 'Вниз', left: 'Влево', right: 'Вправо'
     },
     ja: {
       title: 'スネーク',
@@ -296,7 +336,8 @@
       result: '{reason} — 最終スコア {score}',
       hint: '難易度：{difficulty}、{ms} ミリ秒ごとに 1 マス（矢印キー / WASD で方向転換、スペースで一時停止）',
       canvasLabel: 'スネークゲームの盤面',
-      languageLabel: '言語'
+      languageLabel: '言語',
+      up: '上', down: '下', left: '左', right: '右'
     }
   };
 
@@ -774,6 +815,13 @@
     var game = new SnakeGame(canvas, { cols: 20, rows: 20, cell: 24, difficultyIndex: 1 });
     window.snakeGame = game;
 
+    /* Every input source (keyboard, swipe, on-screen pad) goes through here:
+       it starts a game when one is needed, then turns the snake. */
+    function steer(input) {
+      if (game.state === 'idle' || game.state === 'over') game.start();
+      game.setDirection(input);
+    }
+
     /* Build the language switcher row from LANGUAGES. */
     var languageButtons = [];
     if (languageNav) {
@@ -796,6 +844,31 @@
       });
     }
 
+    /* Build the on-screen direction pad (CSS hides it where a mouse exists). */
+    var dpad = document.getElementById('dpad');
+    var dpadButtons = [];
+    [['up', '▲'], ['left', '◀'], ['down', '▼'], ['right', '▶']].forEach(function (entry) {
+      if (!dpad) return;
+      var input = entry[0];
+      var button = document.createElement('button');
+      var handled = false;
+      button.type = 'button';
+      button.className = input;
+      button.textContent = entry[1];
+      button.addEventListener('pointerdown', function (event) {
+        handled = true;
+        event.preventDefault();
+        steer(input);
+      });
+      button.addEventListener('click', function (event) {
+        event.preventDefault();
+        if (handled) { handled = false; return; }   /* pointerdown already steered */
+        steer(input);
+      });
+      dpad.appendChild(button);
+      dpadButtons.push({ button: button, input: input });
+    });
+
     game.subscribe(function (snapshot) {
       var t = function (key, values) { return game.text(key, values); };
       var reasonKey = REASON_MESSAGES[snapshot.reason] || 'reasonOther';
@@ -809,6 +882,9 @@
           'aria-current',
           LANGUAGES[i].code === snapshot.language ? 'true' : 'false'
         );
+      }
+      for (var b = 0; b < dpadButtons.length; b++) {
+        dpadButtons[b].button.setAttribute('aria-label', t(dpadButtons[b].input));
       }
 
       scoreboard.textContent = t('score') + ': ' + snapshot.score + '　' + t('best') + ': ' + snapshot.best;
@@ -858,34 +934,63 @@
       var wanted = KEY_DIRECTIONS[key];
       if (!wanted) return;
       event.preventDefault();
-      if (game.state === 'idle' || game.state === 'over') game.start();
-      game.setDirection(wanted);
+      steer(wanted);
     });
 
+    /* Touch: turn while the finger is still moving, so the snake reacts at once.
+       A short movement counts as a tap: start, pause or resume. */
+    var TURN_STEP = 22;   /* px of travel before another turn is queued */
+    var TAP_SLOP = 12;    /* below this the gesture is a tap */
     var touchStart = null;
+    var touchLast = null;
+
+    function touchPoint(touch) {
+      return { x: touch.clientX, y: touch.clientY };
+    }
+
+    function directionOf(deltaX, deltaY) {
+      if (Math.abs(deltaX) > Math.abs(deltaY)) return deltaX > 0 ? 'right' : 'left';
+      return deltaY > 0 ? 'down' : 'up';
+    }
+
     canvas.addEventListener('touchstart', function (event) {
       var touch = event.changedTouches[0];
-      touchStart = { x: touch.clientX, y: touch.clientY };
+      if (!touch) return;
+      touchStart = touchPoint(touch);
+      touchLast = touchStart;
     }, { passive: true });
+
+    canvas.addEventListener('touchmove', function (event) {
+      if (!touchStart) return;
+      var touch = event.changedTouches[0];
+      if (!touch) return;
+      var point = touchPoint(touch);
+      var deltaX = point.x - touchLast.x;
+      var deltaY = point.y - touchLast.y;
+      if (Math.abs(deltaX) < TURN_STEP && Math.abs(deltaY) < TURN_STEP) return;
+      event.preventDefault();
+      steer(directionOf(deltaX, deltaY));
+      touchLast = point;
+    }, { passive: false });
 
     canvas.addEventListener('touchend', function (event) {
       if (!touchStart) return;
       var touch = event.changedTouches[0];
-      var deltaX = touch.clientX - touchStart.x;
-      var deltaY = touch.clientY - touchStart.y;
+      var travelled = touch ? Math.max(
+        Math.abs(touch.clientX - touchStart.x),
+        Math.abs(touch.clientY - touchStart.y)
+      ) : TAP_SLOP;
       touchStart = null;
+      touchLast = null;
+      if (travelled >= TAP_SLOP) return;   /* that was a swipe, not a tap */
+      event.preventDefault();
+      game.toggleStart();
+    }, { passive: false });
 
-      if (game.state === 'idle' || game.state === 'over') {
-        game.start();
-      }
-      if (Math.abs(deltaX) < 24 && Math.abs(deltaY) < 24) {
-        game.toggleStart();
-      } else if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        game.setDirection(deltaX > 0 ? 'right' : 'left');
-      } else {
-        game.setDirection(deltaY > 0 ? 'down' : 'up');
-      }
-    }, { passive: true });
+    canvas.addEventListener('touchcancel', function () {
+      touchStart = null;
+      touchLast = null;
+    });
 
     game.render();
   }

@@ -13,7 +13,7 @@ An open-source Agent Skill that makes an AI hand you a snake game **you can play
 >
 > Documentation site (click a language to switch in place): https://wohui-netizen.github.io/wohui-Snake-game/
 
-Then tap `Start Game`. On a phone, swipe on the board to steer and tap to pause.
+Then tap `Start Game`. On a phone, swipe on the board to steer, tap to pause, or use the on-screen arrow buttons shown under the two buttons.
 
 
 No installation, no AI, no build step: the game is already in this repository as **one single file**.
@@ -71,7 +71,7 @@ This project freezes a **complete, automated-test-verified implementation** into
 | Languages | The UI ships in **English (default)**, 简体中文, Français, Русский and 日本語. One click re-labels the whole page instantly, and the choice is remembered in `localStorage` (key `snake-game:language`) |
 | Endings | Head hits a wall → loss; head hits its own body → loss (the overlay names the reason and the final score); snake fills every cell → win, and no further food spawns |
 | Turning | Up to 2 turns are buffered (quick double-taps are not lost), 180° reversals are rejected, and the cell the tail has just vacated can be entered |
-| Controls | Arrow keys / WASD to turn, Space to pause or resume, an arrow key starts a game from idle; on touch, swipe to turn and tap to pause; a focused button does not swallow Space |
+| Controls | Arrow keys / WASD to turn, Space to pause or resume, an arrow key starts a game from idle; on touch, swipe to turn, tap to pause, and an on-screen direction pad is shown under the buttons; a focused button does not swallow Space |
 | Stability | At most 4 catch-up steps per frame, so returning to a backgrounded tab never teleports the snake into a wall |
 | Accessibility | Status line announced via `role="status" aria-live="polite"`, keyboard-focusable buttons, labelled canvas |
 | Debug hooks | `window.snakeGame` (live instance), `window.SnakeGame` (class), `window.SNAKE_DIFFICULTIES`, `window.SNAKE_LANGUAGES` |

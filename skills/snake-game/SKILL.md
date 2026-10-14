@@ -27,7 +27,7 @@ Unless the user explicitly asks otherwise, the delivered page must satisfy all o
 | Difficulty | Higher difficulty means a faster snake: Easy 220 ms, Normal 150 ms, Hard 100 ms, Insane 60 ms per cell; switching mid-game applies immediately and the hint line shows the current per-cell timing |
 | Loss | Head hits a wall, or head hits the snake's own body → game over, with the overlay naming the reason and showing the final score |
 | Win | The snake fills every cell → the game ends as a win, and no further food is spawned |
-| Controls | Arrow keys or WASD to turn, Space to pause/resume; on touch, swipe to turn and tap to pause; 180° reversals are forbidden |
+| Controls | Arrow keys or WASD to turn, Space to pause/resume; on touch, swipe to turn, tap to pause, and an on-screen direction pad is shown; 180° reversals are forbidden |
 | Languages | The interface ships in **English (default)**, 简体中文, Français, Русский and 日本語, with a switcher row under the buttons. Switching re-labels everything instantly and the choice is remembered; an unknown or missing stored value falls back to English |
 | Status | Idle, paused and game-over states all show an overlay on the board; the status line uses `aria-live="polite"` and every button is keyboard reachable |
 
@@ -67,7 +67,7 @@ Behaviour (verify each one on the page, not just in the code):
 - Switching the language relabels the score line, both buttons, the overlay, the hint line and the page title, and the choice survives a reload; a stored value that is not a known language falls back to English.
 - Leaving the tab and coming back does not make the snake cross dozens of cells and crash.
 - After a refresh, `Best` still shows the previous record (degrading to "no crash" is acceptable where the browser blocks persistence).
-- On a narrow screen (about 360 px wide) the board does not overflow, the buttons stay aligned, and swiping still turns the snake.
+- On a narrow screen (about 360 px wide) the board does not overflow, the buttons and the on-screen direction pad stay aligned, and swiping or the pad turns the snake.
 
 Visuals: the overall look matches the reference — score line on top, teal grid board, orange food, dark red body segments carrying arrows, purple head, and the two buttons below.
 

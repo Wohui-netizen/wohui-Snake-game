@@ -13,7 +13,7 @@ Un Agent Skill open source qui permet à une IA de vous livrer un jeu de serpent
 >
 > Site de documentation (un clic change la langue sur place) : https://wohui-netizen.github.io/wohui-Snake-game/
 
-Appuyez ensuite sur `Start Game`. Sur téléphone, balayez le plateau pour tourner et touchez pour mettre en pause.
+Appuyez ensuite sur `Start Game`. Sur téléphone, balayez le plateau pour tourner, touchez pour mettre en pause, ou utilisez la croix directionnelle affichée sous les deux boutons.
 
 
 Aucune installation, aucune IA, aucune compilation : le jeu est déjà dans ce dépôt, en **un seul fichier**.
@@ -71,7 +71,7 @@ Ce projet fige une **implémentation complète, validée par des tests automatis
 | Langues | L'interface est livrée en **anglais (par défaut)**, 简体中文, Français, Русский et 日本語. Un clic réétiquette toute la page instantanément, et le choix est mémorisé dans `localStorage` (clé `snake-game:language`) |
 | Fins de partie | La tête touche un mur → défaite ; la tête touche son propre corps → défaite (la surcouche indique la raison et le score final) ; le serpent remplit toutes les cellules → victoire, et aucune autre nourriture n'apparaît |
 | Virages | Jusqu'à 2 virages sont mis en mémoire tampon (les doubles appuis rapides ne sont pas perdus), les demi-tours à 180° sont refusés, et la cellule que la queue vient de libérer reste accessible |
-| Commandes | Flèches / WASD pour tourner, Espace pour mettre en pause ou reprendre, une flèche démarre une partie depuis l'état initial ; au tactile, balayez pour tourner et touchez pour mettre en pause ; un bouton ayant le focus n'avale pas l'Espace |
+| Commandes | Flèches / WASD pour tourner, Espace pour mettre en pause ou reprendre, une flèche démarre une partie depuis l'état initial ; au tactile, balayez pour tourner, touchez pour mettre en pause, et une croix directionnelle s'affiche sous les boutons ; un bouton ayant le focus n'avale pas l'Espace |
 | Stabilité | Au plus 4 étapes de rattrapage par image : revenir sur un onglet en arrière-plan ne téléporte donc jamais le serpent dans un mur |
 | Accessibilité | Ligne d'état annoncée via `role="status" aria-live="polite"`, boutons accessibles au clavier, canvas étiqueté |
 | Points d'accroche de débogage | `window.snakeGame` (instance active), `window.SnakeGame` (classe), `window.SNAKE_DIFFICULTIES`, `window.SNAKE_LANGUAGES` |

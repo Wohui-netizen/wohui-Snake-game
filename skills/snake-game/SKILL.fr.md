@@ -27,7 +27,7 @@ Sauf demande explicite du contraire, la page livrée doit satisfaire l'ensemble 
 | Difficulté | Plus la difficulté est élevée, plus le serpent est rapide : Facile 220 ms, Normal 150 ms, Difficile 100 ms, Enfer 60 ms par cellule ; un changement en cours de partie s'applique immédiatement et la ligne d'indication affiche le temps par cellule actuel |
 | Défaite | La tête touche un mur, ou la tête touche le corps du serpent → partie terminée, la surcouche indiquant la raison et le score final |
 | Victoire | Le serpent remplit toutes les cellules → la partie se termine par une victoire, et aucune autre nourriture n'apparaît |
-| Commandes | Flèches ou WASD pour tourner, Espace pour mettre en pause/reprendre ; au tactile, balayez pour tourner et touchez pour mettre en pause ; les demi-tours à 180° sont interdits |
+| Commandes | Flèches ou WASD pour tourner, Espace pour mettre en pause/reprendre ; au tactile, balayez pour tourner, touchez pour mettre en pause et utilisez la croix directionnelle affichée ; les demi-tours à 180° sont interdits |
 | Langues | L'interface est livrée en **anglais (par défaut)**, 简体中文, Français, Русский et 日本語, avec une rangée de sélection sous les boutons. Le changement réétiquette tout instantanément et le choix est mémorisé ; une valeur stockée inconnue ou absente se rabat sur l'anglais |
 | État | Les états initial, en pause et terminé affichent tous une surcouche sur la grille ; la ligne d'état utilise `aria-live="polite"` et tous les boutons sont accessibles au clavier |
 
@@ -67,7 +67,7 @@ Comportement (vérifiez chaque point sur la page, pas seulement dans le code) :
 - Changer la langue réétiquette la ligne de score, les deux boutons, la surcouche, la ligne d'indication et le titre de la page, et le choix survit à un rechargement ; une valeur stockée qui n'est pas une langue connue se rabat sur l'anglais.
 - Quitter l'onglet et y revenir ne fait pas traverser des dizaines de cellules au serpent ni ne le fait planter.
 - Après un rafraîchissement, `Best` affiche toujours le record précédent (se dégrader en « aucun plantage » est acceptable lorsque le navigateur bloque la persistance).
-- Sur un écran étroit (environ 360 px de large), la grille ne déborde pas, les boutons restent alignés et le balayage fait toujours tourner le serpent.
+- Sur un écran étroit (environ 360 px de large), la grille ne déborde pas, les boutons et la croix directionnelle restent alignés, et le balayage comme la croix font tourner le serpent.
 
 Visuel : l'aspect général correspond à la référence — ligne de score en haut, grille turquoise, nourriture orange, segments de corps rouge foncé portant des flèches, tête violette et les deux boutons en dessous.
 

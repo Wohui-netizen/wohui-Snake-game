@@ -63,6 +63,51 @@
 <h1>Snake-game Skill</h1>
 <p>An open-source Agent Skill that makes an AI hand you a snake game <strong>you can play the moment it opens</strong>.</p>
 <p><img alt="Snake game preview" src="docs/preview.png" /></p>
+<h2>Play right now</h2>
+<p><strong>Any phone or any computer — just open this link:</strong></p>
+<blockquote>
+<p>🎮 <strong>https://wohui-netizen.github.io/wohui-Snake-game/skills/snake-game/assets/snake-game.html</strong></p>
+<p>Documentation site (click a language to switch in place): https://wohui-netizen.github.io/wohui-Snake-game/</p>
+</blockquote>
+<p>Then tap <code>Start Game</code>. On a phone, swipe on the board to steer, tap to pause, or use the on-screen arrow buttons shown under the two buttons.</p>
+<p>No installation, no AI, no build step: the game is already in this repository as <strong>one single file</strong>.</p>
+<ol>
+<li>Open <strong><a href="skills/snake-game/assets/snake-game.html"><code>skills/snake-game/assets/snake-game.html</code></a></strong> and click <strong>Download raw file</strong> (or clone the repository).</li>
+<li><strong>Double-click the file you downloaded</strong> — it opens in your browser and plays offline.</li>
+<li>Press <strong><code>Start Game</code></strong>:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Key / control</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>←</code> <code>↑</code> <code>→</code> <code>↓</code> or <code>W</code> <code>A</code> <code>S</code> <code>D</code></td>
+<td>steer the snake (arrow keys also start the game)</td>
+</tr>
+<tr>
+<td><code>Space</code></td>
+<td>pause / resume</td>
+</tr>
+<tr>
+<td>the <code>Difficulty: Normal</code> button</td>
+<td>cycle Easy → Normal → Hard → Insane (further right = faster)</td>
+</tr>
+<tr>
+<td>the language row under the buttons</td>
+<td>switch the interface between English, 简体中文, Français, Русский, 日本語</td>
+</tr>
+</tbody>
+</table>
+<p>Eat the orange squares, avoid the walls and your own body, and try to fill the whole board. Your best score is remembered between sessions.</p>
+<p>Prefer a URL? Serve the folder and open it in the browser:</p>
+<pre><code class="language-bash">cd skills/snake-game/assets
+python -m http.server 8000
+# then open http://localhost:8000/snake-game.html
+</code></pre>
 <h2>1. What problem does this solve?</h2>
 <p>Writing a snake game that "just works when you double-click it" means getting a long list of fiddly details right at the same time: the timing loop and difficulty speeds, three different endings (hit a wall / hit yourself / fill the board), direction keys that lose input when tapped quickly, a snake that teleports into a wall after you switch tabs and come back, high-score persistence, touch controls, and external assets that break the page the moment you go offline. Ask an AI to generate it from scratch and the result usually looks playable while hiding real bugs.</p>
 <p>This project freezes a <strong>complete, automated-test-verified implementation</strong> into a skill asset, and writes the delivery spec plus an acceptance checklist into <code>SKILL.md</code>: instead of writing from scratch, the AI copies the baseline, changes only what the user asked for, and self-checks item by item before delivering.</p>
@@ -119,7 +164,7 @@
 </tr>
 <tr>
 <td>Controls</td>
-<td>Arrow keys / WASD to turn, Space to pause or resume, an arrow key starts a game from idle; on touch, swipe to turn and tap to pause; a focused button does not swallow Space</td>
+<td>Arrow keys / WASD to turn, Space to pause or resume, an arrow key starts a game from idle; on touch, swipe to turn, tap to pause, and an on-screen direction pad is shown under the buttons; a focused button does not swallow Space</td>
 </tr>
 <tr>
 <td>Stability</td>
@@ -159,8 +204,9 @@
 <p>Hand <code>SKILL.md</code> to the model as instructions and <code>assets/snake-game.html</code> as the template. No specific host required.</p>
 <h3>Optional: check that the install is complete</h3>
 <p>The package follows the Agent Skill layout, so you can validate it with the official skill-creator script (bring your own copy of the script):</p>
-<pre><code class="language-bash">python quick_validate.py skills/snake-game
+<pre><code class="language-bash">python -X utf8 quick_validate.py skills/snake-game
 # expected output: Skill is valid!
+# On Windows with a non-UTF-8 locale, add -X utf8: the script reads SKILL.md with the default encoding.
 </code></pre>
 <p>The directory should contain <code>SKILL.md</code>, <code>agents/openai.yaml</code> and <code>assets/snake-game.html</code>, with no stray <code>scripts/</code>.</p>
 <h2>4. Usage</h2>
@@ -272,6 +318,7 @@ README.zh-CN.md            # 简体中文
 README.fr.md               # Français
 README.ru.md               # Русский
 README.ja.md               # 日本語
+index.html                 # single-page documentation: click a language to re-render in place
 LICENSE                    # MIT licence
 skills/snake-game/
 ├── SKILL.md               # English: delivery spec, workflow, acceptance checklist, boundaries
@@ -289,6 +336,7 @@ docs/preview.zh-CN.png     # the same board with the Chinese UI
 <ul>
 <li><code>SKILL.md</code> and <code>agents/openai.yaml</code> pass the official skill-creator <code>quick_validate.py</code> (output: <code>Skill is valid!</code>) and also a stricter structural check: main-file line and character budgets, referenced-path existence, metadata fields and empty-directory checks all report 0 errors.</li>
 <li>The game logic was exercised with 24 assertions in a real Chromium engine (headless Edge) and 87 assertions under Node with a DOM stub, covering: movement and eating, wall collision, self collision, winning by filling the board, the difficulty-to-speed mapping, reversal rejection, turn buffering, pause and resume, high-score persistence with a safe fallback when storage is unavailable, the catch-up cap after a long stall, and the canvas contents and colours.</li>
+<li>The single-page documentation in <code>index.html</code> was verified in the same headless browser with 22 assertions: it starts in English, one click re-renders the whole page in place without navigating, the URL hash follows, and the choice is stored and shared with the game.</li>
 <li>The language layer is covered too: the default is English, all five languages render their own labels, switching is instant, the choice survives a reload, and an unknown stored value falls back to English.</li>
 <li>Request types 1, 2 and 3 in the table above were actually generated and re-tested end to end; the preview images are real browser renders.</li>
 <li>Not verified: <code>localStorage</code> behaviour under <code>file://</code> varies between browsers (the code degrades instead of throwing).</li>
@@ -303,6 +351,51 @@ docs/preview.zh-CN.png     # the same board with the Chinese UI
 <h1>Snake-game Skill</h1>
 <p>一个可开源的 Agent Skill：让 AI 交付一个<strong>打开就能玩</strong>的贪吃蛇网页游戏。</p>
 <p><img alt="贪吃蛇游戏预览" src="docs/preview.zh-CN.png" /></p>
+<h2>马上开玩</h2>
+<p><strong>手机、电脑都能直接打开这个网址：</strong></p>
+<blockquote>
+<p>🎮 <strong>https://wohui-netizen.github.io/wohui-Snake-game/skills/snake-game/assets/snake-game.html</strong></p>
+<p>文档站（点语言就地切换）：https://wohui-netizen.github.io/wohui-Snake-game/</p>
+</blockquote>
+<p>打开后点「Start Game」。手机上可以滑动转向、轻点暂停，也可以直接点两个按钮下方那排方向键（▲ ◀ ▼ ▶）。</p>
+<p>不用安装、不用 AI、不用构建：游戏就是本仓库里的<strong>一个文件</strong>。</p>
+<ol>
+<li>打开 <strong><a href="skills/snake-game/assets/snake-game.html"><code>skills/snake-game/assets/snake-game.html</code></a></strong>，点右上角 <strong>Download raw file</strong> 下载（或者直接克隆仓库）。</li>
+<li><strong>双击下载到的文件</strong>，浏览器就会打开它，断网也能玩。</li>
+<li>点 <strong>「Start Game」</strong>（切到中文界面后是「开始游戏」）：</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>←</code> <code>↑</code> <code>→</code> <code>↓</code> 或 <code>W</code> <code>A</code> <code>S</code> <code>D</code></td>
+<td>控制蛇的方向（未开局时按方向键直接开始）</td>
+</tr>
+<tr>
+<td><code>空格</code></td>
+<td>暂停 / 继续</td>
+</tr>
+<tr>
+<td><code>Difficulty: Normal</code> 按钮（中文界面为「选择难度：普通」）</td>
+<td>循环切换 简单 → 普通 → 困难 → 地狱，越右越快</td>
+</tr>
+<tr>
+<td>按钮下面那行语言</td>
+<td>在 English / 简体中文 / Français / Русский / 日本語 之间切换界面</td>
+</tr>
+</tbody>
+</table>
+<p>吃橙色方块、别撞墙也别撞到自己，试着把整个棋盘填满；历史最高分会记住。</p>
+<p>想用网址打开也行：</p>
+<pre><code class="language-bash">cd skills/snake-game/assets
+python -m http.server 8000
+# 浏览器打开 http://localhost:8000/snake-game.html
+</code></pre>
 <h2>1. 项目解决什么问题</h2>
 <p>想要一个「双击就能玩」的贪吃蛇网页，从零写要同时处理一堆容易翻车的细节：计时循环与难度速度、撞墙／撞自己／填满棋盘三种终局、快速连按方向键丢输入、切走标签页再回来蛇直接暴走撞墙、最高分持久化、移动端操作、以及外链资源导致断网打不开。让 AI 每次从零生成，结果往往看起来能跑、实际有坑。</p>
 <p>本项目把一份<strong>已经跑通并被自动化测试覆盖</strong>的完整实现固化成技能资产，把交付规格和验收清单写进 <code>SKILL.md</code>：AI 不再从零写，而是复制基线、只改用户点名的部分、按清单逐条自检后交付。</p>
@@ -359,7 +452,7 @@ docs/preview.zh-CN.png     # the same board with the Chinese UI
 </tr>
 <tr>
 <td>操作</td>
-<td>方向键／WASD 转向，空格暂停／继续，未开局时按方向键直接开始；移动端滑动转向、轻点暂停；焦点在按钮上时不会误触发暂停</td>
+<td>方向键／WASD 转向，空格暂停／继续，未开局时按方向键直接开始；移动端滑动转向、轻点暂停，并在按钮下方显示屏幕方向键；焦点在按钮上时不会误触发暂停</td>
 </tr>
 <tr>
 <td>稳定性</td>
@@ -398,7 +491,7 @@ docs/preview.zh-CN.png     # the same board with the Chinese UI
 <p>把 <code>SKILL.md</code> 当作指令、<code>assets/snake-game.html</code> 当作模板交给模型即可，不依赖特定宿主。</p>
 <h3>可选：校验安装是否完整</h3>
 <p>技能包遵循 Agent Skill 规范，可用官方 skill-creator 的校验脚本自检（脚本需自备）：</p>
-<pre><code class="language-bash">python quick_validate.py skills/snake-game
+<pre><code class="language-bash">python -X utf8 quick_validate.py skills/snake-game
 # 期望输出：Skill is valid!
 </code></pre>
 <p>目录应包含：<code>SKILL.md</code>、<code>agents/openai.yaml</code>、<code>assets/snake-game.html</code>，且没有多余的 <code>scripts/</code>。</p>
@@ -510,6 +603,7 @@ README.zh-CN.md            # 简体中文
 README.fr.md               # Français
 README.ru.md               # Русский
 README.ja.md               # 日本語
+index.html                 # 单页文档：点一下语言即时整页切换
 LICENSE                    # MIT 许可证
 skills/snake-game/
 ├── SKILL.md               # 英文：交付规格、工作流程、验收清单、边界
@@ -527,6 +621,7 @@ docs/preview.zh-CN.png     # 中文界面预览图
 <ul>
 <li><code>SKILL.md</code> 与 <code>agents/openai.yaml</code> 通过官方 skill-creator 的 <code>quick_validate.py</code>（输出 <code>Skill is valid!</code>），并通过更严格的结构校验：主文件行数／字符预算、引用路径存在性、元数据字段、空目录检查全部 0 错误。</li>
 <li>游戏逻辑在真实 Chromium 内核（无头 Edge）跑 24 项断言，另用 Node + DOM 桩跑 87 项断言，覆盖：移动与吃食物、撞墙判负、撞到自己判负、填满棋盘通关、难度与速度映射、禁反向、转向缓冲、暂停与继续、最高分持久化与存储不可用降级、长卡顿不补步、画布绘制内容与配色。</li>
+<li><code>index.html</code> 单页文档同样在无头浏览器里跑了 22 项断言：默认英文，点一下即整页就地切换（不跳转），地址栏 hash 同步更新，选择被记住并与游戏共用。</li>
 <li>语言层同样覆盖：默认为英文，五种语言各自渲染自己的文案，切换即时生效，刷新后保留选择，存储里是不认识的语言代码时回退英文。</li>
 <li>上表第 1、2、3 类请求都实际生成过页面并逐项复测，全部通过；预览图即真实浏览器渲染结果。</li>
 <li>未验证项：<code>localStorage</code> 在 <code>file://</code> 下的表现随浏览器而异（代码已做降级，不会报错）。</li>
@@ -541,6 +636,51 @@ docs/preview.zh-CN.png     # 中文界面预览图
 <h1>Skill Snake-game</h1>
 <p>Un Agent Skill open source qui permet à une IA de vous livrer un jeu de serpent <strong>jouable dès l'ouverture</strong>.</p>
 <p><img alt="Aperçu du jeu de serpent" src="docs/preview.png" /></p>
+<h2>Jouer tout de suite</h2>
+<p><strong>Sur n’importe quel téléphone ou ordinateur — ouvrez simplement ce lien :</strong></p>
+<blockquote>
+<p>🎮 <strong>https://wohui-netizen.github.io/wohui-Snake-game/skills/snake-game/assets/snake-game.html</strong></p>
+<p>Site de documentation (un clic change la langue sur place) : https://wohui-netizen.github.io/wohui-Snake-game/</p>
+</blockquote>
+<p>Appuyez ensuite sur <code>Start Game</code>. Sur téléphone, balayez le plateau pour tourner, touchez pour mettre en pause, ou utilisez la croix directionnelle affichée sous les deux boutons.</p>
+<p>Aucune installation, aucune IA, aucune compilation : le jeu est déjà dans ce dépôt, en <strong>un seul fichier</strong>.</p>
+<ol>
+<li>Ouvrez <strong><a href="skills/snake-game/assets/snake-game.html"><code>skills/snake-game/assets/snake-game.html</code></a></strong> et cliquez sur <strong>Download raw file</strong> (ou clonez le dépôt).</li>
+<li><strong>Double-cliquez sur le fichier téléchargé</strong> : il s'ouvre dans votre navigateur et fonctionne hors ligne.</li>
+<li>Appuyez sur <strong><code>Start Game</code></strong> (ou « Jouer » en interface française) :</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Touche / commande</th>
+<th>Effet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>←</code> <code>↑</code> <code>→</code> <code>↓</code> ou <code>W</code> <code>A</code> <code>S</code> <code>D</code></td>
+<td>diriger le serpent (une flèche lance aussi la partie)</td>
+</tr>
+<tr>
+<td><code>Espace</code></td>
+<td>pause / reprise</td>
+</tr>
+<tr>
+<td>le bouton <code>Difficulty: Normal</code></td>
+<td>parcourt Facile → Normal → Difficile → Enfer (plus à droite = plus rapide)</td>
+</tr>
+<tr>
+<td>la ligne de langues sous les boutons</td>
+<td>bascule l'interface entre English, 简体中文, Français, Русский, 日本語</td>
+</tr>
+</tbody>
+</table>
+<p>Mangez les carrés orange, évitez les murs et votre propre corps, et essayez de remplir tout le plateau. Votre meilleur score est conservé.</p>
+<p>Vous préférez une URL ? Servez le dossier puis ouvrez-le dans le navigateur :</p>
+<pre><code class="language-bash">cd skills/snake-game/assets
+python -m http.server 8000
+# puis ouvrez http://localhost:8000/snake-game.html
+</code></pre>
 <h2>1. Quel problème cela résout-il ?</h2>
 <p>Écrire un jeu de serpent qui « fonctionne dès le double-clic » suppose de réussir simultanément une longue liste de détails délicats : la boucle temporelle et les vitesses de difficulté, trois fins différentes (toucher un mur / se mordre soi-même / remplir la grille), des touches directionnelles qui perdent les saisies trop rapides, un serpent qui se téléporte dans un mur après un aller-retour vers un autre onglet, la persistance du meilleur score, les commandes tactiles et des ressources externes qui cassent la page dès que l'on passe hors ligne. Demandez à une IA de le générer de zéro : le résultat semble jouable tout en dissimulant de vrais bugs.</p>
 <p>Ce projet fige une <strong>implémentation complète, validée par des tests automatisés</strong> dans un actif de skill, et consigne la spécification de livraison ainsi qu'une liste de vérification d'acceptation dans <code>SKILL.md</code> : plutôt que d'écrire à partir de zéro, l'IA copie la base, ne modifie que ce que l'utilisateur a demandé et s'auto-contrôle point par point avant de livrer.</p>
@@ -597,7 +737,7 @@ docs/preview.zh-CN.png     # 中文界面预览图
 </tr>
 <tr>
 <td>Commandes</td>
-<td>Flèches / WASD pour tourner, Espace pour mettre en pause ou reprendre, une flèche démarre une partie depuis l'état initial ; au tactile, balayez pour tourner et touchez pour mettre en pause ; un bouton ayant le focus n'avale pas l'Espace</td>
+<td>Flèches / WASD pour tourner, Espace pour mettre en pause ou reprendre, une flèche démarre une partie depuis l'état initial ; au tactile, balayez pour tourner, touchez pour mettre en pause, et une croix directionnelle s'affiche sous les boutons ; un bouton ayant le focus n'avale pas l'Espace</td>
 </tr>
 <tr>
 <td>Stabilité</td>
@@ -637,8 +777,9 @@ docs/preview.zh-CN.png     # 中文界面预览图
 <p>Transmettez <code>SKILL.md</code> au modèle comme instructions et <code>assets/snake-game.html</code> comme modèle de départ. Aucun hôte particulier n'est requis.</p>
 <h3>Facultatif : vérifier que l'installation est complète</h3>
 <p>Le paquet suit l'arborescence Agent Skill ; vous pouvez donc le valider avec le script officiel skill-creator (à vous de fournir votre copie du script) :</p>
-<pre><code class="language-bash">python quick_validate.py skills/snake-game
+<pre><code class="language-bash">python -X utf8 quick_validate.py skills/snake-game
 # expected output: Skill is valid!
+# Sous Windows avec une locale non UTF-8, ajoutez -X utf8 : le script lit SKILL.md avec l'encodage par défaut.
 </code></pre>
 <p>Le dossier doit contenir <code>SKILL.md</code>, <code>agents/openai.yaml</code> et <code>assets/snake-game.html</code>, sans <code>scripts/</code> superflu.</p>
 <h2>4. Utilisation</h2>
@@ -750,6 +891,7 @@ README.zh-CN.md            # 简体中文
 README.fr.md               # Français
 README.ru.md               # Русский
 README.ja.md               # 日本語
+index.html                 # single-page documentation: click a language to re-render in place
 LICENSE                    # MIT licence
 skills/snake-game/
 ├── SKILL.md               # English: delivery spec, workflow, acceptance checklist, boundaries
@@ -767,6 +909,7 @@ docs/preview.zh-CN.png     # the same board with the Chinese UI
 <ul>
 <li><code>SKILL.md</code> et <code>agents/openai.yaml</code> passent le <code>quick_validate.py</code> officiel de skill-creator (sortie : <code>Skill is valid!</code>) ainsi qu'un contrôle structurel plus strict : budgets de lignes et de caractères du fichier principal, existence des chemins référencés, champs de métadonnées et vérification des dossiers vides ne signalent aucune erreur.</li>
 <li>La logique du jeu a été éprouvée par 24 assertions dans un vrai moteur Chromium (Edge sans interface graphique) et 87 assertions sous Node avec un simulacre de DOM, couvrant : le déplacement et l'ingestion, la collision avec un mur, la collision avec soi-même, la victoire en remplissant la grille, la correspondance difficulté-vitesse, le refus des demi-tours, la mise en mémoire tampon des virages, la pause et la reprise, la persistance du meilleur score avec un repli sûr lorsque le stockage est indisponible, le plafond de rattrapage après une longue interruption, ainsi que le contenu et les couleurs du canvas.</li>
+<li>La documentation d'une seule page (<code>index.html</code>) a été vérifiée dans le même navigateur sans interface avec 22 assertions : elle démarre en anglais, un clic réaffiche toute la page sur place sans navigation, le fragment d'URL suit, et le choix est mémorisé et partagé avec le jeu.</li>
 <li>La couche linguistique est également couverte : l'anglais est la langue par défaut, les cinq langues affichent leurs propres libellés, le changement est instantané, le choix survit à un rechargement et une valeur stockée inconnue se rabat sur l'anglais.</li>
 <li>Les demandes de type 1, 2 et 3 du tableau ci-dessus ont réellement été générées et retestées de bout en bout ; les images d'aperçu sont de vrais rendus de navigateur.</li>
 <li>Non vérifié : le comportement de <code>localStorage</code> sous <code>file://</code> varie selon les navigateurs (le code se dégrade au lieu de lever une exception).</li>
@@ -781,6 +924,51 @@ docs/preview.zh-CN.png     # the same board with the Chinese UI
 <h1>Snake-game Skill</h1>
 <p>Открытый Agent Skill, благодаря которому ИИ выдаёт вам игру «змейка», <strong>в которую можно играть сразу после открытия файла</strong>.</p>
 <p><img alt="Превью игры «змейка»" src="docs/preview.png" /></p>
+<h2>Играть сразу</h2>
+<p><strong>С любого телефона или компьютера — просто откройте эту ссылку:</strong></p>
+<blockquote>
+<p>🎮 <strong>https://wohui-netizen.github.io/wohui-Snake-game/skills/snake-game/assets/snake-game.html</strong></p>
+<p>Сайт документации (щелчок переключает язык на месте): https://wohui-netizen.github.io/wohui-Snake-game/</p>
+</blockquote>
+<p>Затем нажмите <code>Start Game</code>. На телефоне смахивайте по полю, чтобы поворачивать, касайтесь для паузы или пользуйтесь экранными стрелками под двумя кнопками.</p>
+<p>Ничего устанавливать не нужно — ни ИИ, ни сборки: игра уже лежит в этом репозитории <strong>одним файлом</strong>.</p>
+<ol>
+<li>Откройте <strong><a href="skills/snake-game/assets/snake-game.html"><code>skills/snake-game/assets/snake-game.html</code></a></strong> и нажмите <strong>Download raw file</strong> (или клонируйте репозиторий).</li>
+<li><strong>Дважды щёлкните скачанный файл</strong> — он откроется в браузере и работает без интернета.</li>
+<li>Нажмите <strong><code>Start Game</code></strong> (в русском интерфейсе — «Начать игру»):</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Клавиши / элемент</th>
+<th>Действие</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>←</code> <code>↑</code> <code>→</code> <code>↓</code> или <code>W</code> <code>A</code> <code>S</code> <code>D</code></td>
+<td>управлять змейкой (стрелка также начинает игру)</td>
+</tr>
+<tr>
+<td><code>Пробел</code></td>
+<td>пауза / продолжить</td>
+</tr>
+<tr>
+<td>кнопка <code>Difficulty: Normal</code></td>
+<td>перебирает Легко → Обычно → Сложно → Ад (правее — быстрее)</td>
+</tr>
+<tr>
+<td>строка языков под кнопками</td>
+<td>переключает интерфейс: English, 简体中文, Français, Русский, 日本語</td>
+</tr>
+</tbody>
+</table>
+<p>Съедайте оранжевые квадраты, не врезайтесь в стены и в себя, попробуйте заполнить всё поле. Рекорд сохраняется.</p>
+<p>Хотите по ссылке? Поднимите локальный сервер и откройте страницу:</p>
+<pre><code class="language-bash">cd skills/snake-game/assets
+python -m http.server 8000
+# затем откройте http://localhost:8000/snake-game.html
+</code></pre>
 <h2>1. Какую задачу это решает?</h2>
 <p>Написать «змейку», которая «просто работает по двойному щелчку», — значит одновременно уладить длинный список мелких деталей: цикл по времени и скорости уровней сложности, три разных финала (удар в стену / удар в себя / заполнение поля), клавиши направления, которые теряют ввод при быстром нажатии, змейка, телепортирующаяся в стену после переключения вкладки и возвращения, сохранение рекорда, сенсорное управление и внешние ресурсы, из-за которых страница ломается, стоит оказаться офлайн. Попросите ИИ сгенерировать всё с нуля — и результат обычно выглядит играбельным, скрывая настоящие ошибки.</p>
 <p>Этот проект фиксирует <strong>полную реализацию, проверенную автоматическими тестами</strong>, в виде ресурса навыка и переносит спецификацию поставки вместе с чек-листом приёмки в <code>SKILL.md</code>: вместо написания с нуля ИИ копирует базовую версию, меняет только то, что просил пользователь, и проверяет себя по пунктам перед выдачей результата.</p>
@@ -837,7 +1025,7 @@ docs/preview.zh-CN.png     # the same board with the Chinese UI
 </tr>
 <tr>
 <td>Управление</td>
-<td>Стрелки / WASD для поворота, Space для паузы или продолжения, нажатие стрелки запускает игру из простоя; на сенсорных экранах свайп поворачивает, а касание ставит паузу; кнопка в фокусе не перехватывает Space</td>
+<td>Стрелки / WASD для поворота, Space для паузы или продолжения, нажатие стрелки запускает игру из простоя; на сенсорных экранах свайп поворачивает, касание ставит паузу, а под кнопками показан экранный блок стрелок; кнопка в фокусе не перехватывает Space</td>
 </tr>
 <tr>
 <td>Устойчивость</td>
@@ -877,8 +1065,9 @@ docs/preview.zh-CN.png     # the same board with the Chinese UI
 <p>Передайте модели <code>SKILL.md</code> как инструкции, а <code>assets/snake-game.html</code> — как шаблон. Конкретная платформа не требуется.</p>
 <h3>Необязательно: проверить, что установка полная</h3>
 <p>Пакет соответствует раскладке Agent Skill, поэтому его можно проверить официальным скриптом skill-creator (свою копию скрипта нужно взять отдельно):</p>
-<pre><code class="language-bash">python quick_validate.py skills/snake-game
+<pre><code class="language-bash">python -X utf8 quick_validate.py skills/snake-game
 # expected output: Skill is valid!
+# В Windows с локалью, отличной от UTF-8, добавьте -X utf8: скрипт читает SKILL.md в кодировке по умолчанию.
 </code></pre>
 <p>В каталоге должны быть <code>SKILL.md</code>, <code>agents/openai.yaml</code> и <code>assets/snake-game.html</code> — и никаких лишних <code>scripts/</code>.</p>
 <h2>4. Использование</h2>
@@ -990,6 +1179,7 @@ README.zh-CN.md            # 简体中文
 README.fr.md               # Français
 README.ru.md               # Русский
 README.ja.md               # 日本語
+index.html                 # single-page documentation: click a language to re-render in place
 LICENSE                    # MIT licence
 skills/snake-game/
 ├── SKILL.md               # English: delivery spec, workflow, acceptance checklist, boundaries
@@ -1007,6 +1197,7 @@ docs/preview.zh-CN.png     # the same board with the Chinese UI
 <ul>
 <li><code>SKILL.md</code> и <code>agents/openai.yaml</code> проходят официальный <code>quick_validate.py</code> от skill-creator (вывод: <code>Skill is valid!</code>), а также более строгую структурную проверку: лимиты строк и символов основного файла, существование упомянутых путей, поля метаданных и пустые каталоги — 0 ошибок.</li>
 <li>Игровая логика была проверена 24 утверждениями в настоящем движке Chromium (headless Edge) и 87 утверждениями под Node с заглушкой DOM, охватывающими: движение и поедание, столкновение со стеной, столкновение с собой, победу при заполнении поля, соответствие сложности и скорости, отклонение разворота, буферизацию поворотов, паузу и продолжение, сохранение рекорда с безопасным откатом при недоступности хранилища, ограничение догоняющих шагов после долгой задержки, а также содержимое и цвета canvas.</li>
+<li>Документация на одной странице (<code>index.html</code>) проверена в том же headless-браузере 22 утверждениями: по умолчанию английский, один щелчок перерисовывает страницу на месте без перехода, хэш в адресной строке обновляется, выбор запоминается и общий с игрой.</li>
 <li>Языковой слой тоже покрыт: по умолчанию английский, все пять языков выводят собственные подписи, переключение мгновенное, выбор переживает перезагрузку, а неизвестное сохранённое значение откатывается к английскому.</li>
 <li>Запросы типов 1, 2 и 3 из таблицы выше действительно генерировались и повторно тестировались от начала до конца; изображения превью — настоящие отрисовки браузера.</li>
 <li>Не проверено: поведение <code>localStorage</code> при <code>file://</code> различается в разных браузерах (код деградирует, а не выбрасывает исключение).</li>
@@ -1021,6 +1212,51 @@ docs/preview.zh-CN.png     # the same board with the Chinese UI
 <h1>Snake-game Skill</h1>
 <p>オープンソースの Agent Skill です。AI が<strong>開いた瞬間に遊べる</strong>スネークゲームを渡してくれるようにします。</p>
 <p><img alt="スネークゲームのプレビュー" src="docs/preview.png" /></p>
+<h2>すぐに遊ぶ</h2>
+<p><strong>スマートフォンでもパソコンでも、このリンクを開くだけ：</strong></p>
+<blockquote>
+<p>🎮 <strong>https://wohui-netizen.github.io/wohui-Snake-game/skills/snake-game/assets/snake-game.html</strong></p>
+<p>ドキュメントサイト（クリックでその場で言語切替）：https://wohui-netizen.github.io/wohui-Snake-game/</p>
+</blockquote>
+<p>開いたら <code>Start Game</code> を押します。スマートフォンでは盤面をスワイプして方向転換、タップで一時停止、または 2 つのボタンの下に表示される方向キーも使えます。</p>
+<p>インストールも AI もビルドも不要です。ゲームはこのリポジトリに<strong>1 つのファイル</strong>としてすでに入っています。</p>
+<ol>
+<li><strong><a href="skills/snake-game/assets/snake-game.html"><code>skills/snake-game/assets/snake-game.html</code></a></strong> を開き、右上の <strong>Download raw file</strong> をクリックします（リポジトリを clone しても同じです）。</li>
+<li><strong>ダウンロードしたファイルをダブルクリック</strong>するとブラウザで開き、オフラインでも遊べます。</li>
+<li><strong><code>Start Game</code></strong>（日本語界面では「ゲーム開始」）を押します：</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>キー / 操作</th>
+<th>動作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>←</code> <code>↑</code> <code>→</code> <code>↓</code> または <code>W</code> <code>A</code> <code>S</code> <code>D</code></td>
+<td>スネークの向き（矢印キーでそのまま開始）</td>
+</tr>
+<tr>
+<td><code>スペース</code></td>
+<td>一時停止 / 再開</td>
+</tr>
+<tr>
+<td><code>Difficulty: Normal</code> ボタン</td>
+<td>かんたん → ふつう → むずかしい → 地獄 を順に切替（右ほど速い）</td>
+</tr>
+<tr>
+<td>ボタンの下の言語行</td>
+<td>English / 简体中文 / Français / Русский / 日本語 を切替</td>
+</tr>
+</tbody>
+</table>
+<p>オレンジのマスを食べ、壁と自分の体を避け、盤面を埋めるのを目指します。最高スコアは保存されます。</p>
+<p>URL で開きたい場合はローカルサーバーを立てます：</p>
+<pre><code class="language-bash">cd skills/snake-game/assets
+python -m http.server 8000
+# ブラウザで http://localhost:8000/snake-game.html を開く
+</code></pre>
 <h2>1. 何を解決するのか</h2>
 <p>「ダブルクリックすればそのまま動く」スネークゲームを書くには、細かくて厄介な点を同時に押さえる必要があります。タイマーループと難易度ごとの速度、3 通りの終わり方（壁に衝突／自分に衝突／盤面を埋める）、素早く連打すると入力が抜ける方向キー、タブを切り替えて戻ると蛇が壁までワープする問題、最高スコアの永続化、タッチ操作、そしてオフラインになった瞬間にページが壊れる外部アセット。AI にゼロから生成させると、遊べそうに見えるのに実際にはバグが潜んでいる、という結果になりがちです。</p>
 <p>本プロジェクトは、<strong>自動テストで検証済みの完全な実装</strong>をスキル資産として固定し、交付仕様と受け入れチェックリストを <code>SKILL.md</code> に書き込みました。AI はゼロから書くのではなく、ベースラインをコピーし、ユーザーが指定した箇所だけを変更し、交付前にチェックリストで項目ごとに自己点検します。</p>
@@ -1077,7 +1313,7 @@ docs/preview.zh-CN.png     # the same board with the Chinese UI
 </tr>
 <tr>
 <td>操作</td>
-<td>方向キー／WASD で旋回、Space で一時停止または再開、待機中は方向キーでゲームが始まります。タッチではスワイプで旋回、タップで一時停止します。フォーカス中のボタンが Space を奪うことはありません</td>
+<td>方向キー／WASD で旋回、Space で一時停止または再開、待機中は方向キーでゲームが始まります。タッチではスワイプで旋回、タップで一時停止し、ボタンの下に画面用の方向キーも表示されます。フォーカス中のボタンが Space を奪うことはありません</td>
 </tr>
 <tr>
 <td>安定性</td>
@@ -1117,8 +1353,9 @@ docs/preview.zh-CN.png     # the same board with the Chinese UI
 <p><code>SKILL.md</code> を指示として、<code>assets/snake-game.html</code> をテンプレートとしてモデルに渡します。特定のホストは必要ありません。</p>
 <h3>任意: インストールが完全か確認する</h3>
 <p>このパッケージは Agent Skill のレイアウトに従っているため、公式の skill-creator スクリプトで検証できます（スクリプトはご自身でご用意ください）:</p>
-<pre><code class="language-bash">python quick_validate.py skills/snake-game
+<pre><code class="language-bash">python -X utf8 quick_validate.py skills/snake-game
 # expected output: Skill is valid!
+# 非 UTF-8 ロケールの Windows では -X utf8 を付けてください。スクリプトは SKILL.md を既定のエンコーディングで読み込みます。
 </code></pre>
 <p>ディレクトリには <code>SKILL.md</code>、<code>agents/openai.yaml</code>、<code>assets/snake-game.html</code> が含まれ、余計な <code>scripts/</code> は存在しない状態にしてください。</p>
 <h2>4. 使い方</h2>
@@ -1230,6 +1467,7 @@ README.zh-CN.md            # 简体中文
 README.fr.md               # Français
 README.ru.md               # Русский
 README.ja.md               # 日本語
+index.html                 # single-page documentation: click a language to re-render in place
 LICENSE                    # MIT licence
 skills/snake-game/
 ├── SKILL.md               # English: delivery spec, workflow, acceptance checklist, boundaries
@@ -1247,6 +1485,7 @@ docs/preview.zh-CN.png     # the same board with the Chinese UI
 <ul>
 <li><code>SKILL.md</code> と <code>agents/openai.yaml</code> は公式の skill-creator <code>quick_validate.py</code> に合格し（出力: <code>Skill is valid!</code>）、さらに厳格な構造チェックも通過しています。本体ファイルの行数・文字数の上限、参照パスの存在、メタデータの項目、空ディレクトリの確認はいずれもエラー 0 件です。</li>
 <li>ゲームロジックは、実際の Chromium エンジン（ヘッドレス Edge）で 24 件、DOM スタブを用いた Node で 87 件のアサーションにより検証しました。対象は、移動と捕食、壁への衝突、自己衝突、盤面を埋めることによる勝利、難易度と速度の対応、反転の拒否、旋回のバッファリング、一時停止と再開、ストレージが使えない場合の安全なフォールバックを伴う最高スコアの永続化、長時間の停止後の追いつき上限、キャンバスの内容と色です。</li>
+<li>1 ページ版ドキュメント（<code>index.html</code>）も同じヘッドレスブラウザで 22 件のアサーションにより検証しました。既定は英語で、クリックするとページ遷移せずその場で全体が切り替わり、URL のハッシュも更新され、選択は記憶されゲームと共有されます。</li>
 <li>言語レイヤーも対象です。既定は英語で、5 つの言語すべてがそれぞれのラベルを描画し、切り替えは即座に反映され、選択はリロード後も保持され、保存された未知の値は英語にフォールバックします。</li>
 <li>上記の表にあるリクエスト 1、2、3 は実際に生成し、エンドツーエンドで再テストしました。プレビュー画像は実際のブラウザーでのレンダリング結果です。</li>
 <li>未検証: <code>file://</code> での <code>localStorage</code> の挙動はブラウザーによって異なります（コードは例外を投げずに縮退します）。</li>
