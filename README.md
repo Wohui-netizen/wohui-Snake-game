@@ -6,6 +6,32 @@ An open-source Agent Skill that makes an AI hand you a snake game **you can play
 
 ![Snake game preview](docs/preview.png)
 
+## Play right now
+
+No installation, no AI, no build step: the game is already in this repository as **one single file**.
+
+1. Open **[`skills/snake-game/assets/snake-game.html`](skills/snake-game/assets/snake-game.html)** and click **Download raw file** (or clone the repository).
+2. **Double-click the file you downloaded** — it opens in your browser and plays offline.
+3. Press **`Start Game`**:
+
+| Key / control | What it does |
+| --- | --- |
+| `←` `↑` `→` `↓` or `W` `A` `S` `D` | steer the snake (arrow keys also start the game) |
+| `Space` | pause / resume |
+| the `Difficulty: Normal` button | cycle Easy → Normal → Hard → Insane (further right = faster) |
+| the language row under the buttons | switch the interface between English, 简体中文, Français, Русский, 日本語 |
+
+Eat the orange squares, avoid the walls and your own body, and try to fill the whole board. Your best score is remembered between sessions.
+
+Prefer a URL? Serve the folder and open it in the browser:
+
+```bash
+cd skills/snake-game/assets
+python -m http.server 8000
+# then open http://localhost:8000/snake-game.html
+```
+
+
 ## 1. What problem does this solve?
 
 Writing a snake game that "just works when you double-click it" means getting a long list of fiddly details right at the same time: the timing loop and difficulty speeds, three different endings (hit a wall / hit yourself / fill the board), direction keys that lose input when tapped quickly, a snake that teleports into a wall after you switch tabs and come back, high-score persistence, touch controls, and external assets that break the page the moment you go offline. Ask an AI to generate it from scratch and the result usually looks playable while hiding real bugs.

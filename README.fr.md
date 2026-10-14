@@ -6,6 +6,32 @@ Un Agent Skill open source qui permet à une IA de vous livrer un jeu de serpent
 
 ![Aperçu du jeu de serpent](docs/preview.png)
 
+## Jouer tout de suite
+
+Aucune installation, aucune IA, aucune compilation : le jeu est déjà dans ce dépôt, en **un seul fichier**.
+
+1. Ouvrez **[`skills/snake-game/assets/snake-game.html`](skills/snake-game/assets/snake-game.html)** et cliquez sur **Download raw file** (ou clonez le dépôt).
+2. **Double-cliquez sur le fichier téléchargé** : il s'ouvre dans votre navigateur et fonctionne hors ligne.
+3. Appuyez sur **`Start Game`** (ou « Jouer » en interface française) :
+
+| Touche / commande | Effet |
+| --- | --- |
+| `←` `↑` `→` `↓` ou `W` `A` `S` `D` | diriger le serpent (une flèche lance aussi la partie) |
+| `Espace` | pause / reprise |
+| le bouton `Difficulty: Normal` | parcourt Facile → Normal → Difficile → Enfer (plus à droite = plus rapide) |
+| la ligne de langues sous les boutons | bascule l'interface entre English, 简体中文, Français, Русский, 日本語 |
+
+Mangez les carrés orange, évitez les murs et votre propre corps, et essayez de remplir tout le plateau. Votre meilleur score est conservé.
+
+Vous préférez une URL ? Servez le dossier puis ouvrez-le dans le navigateur :
+
+```bash
+cd skills/snake-game/assets
+python -m http.server 8000
+# puis ouvrez http://localhost:8000/snake-game.html
+```
+
+
 ## 1. Quel problème cela résout-il ?
 
 Écrire un jeu de serpent qui « fonctionne dès le double-clic » suppose de réussir simultanément une longue liste de détails délicats : la boucle temporelle et les vitesses de difficulté, trois fins différentes (toucher un mur / se mordre soi-même / remplir la grille), des touches directionnelles qui perdent les saisies trop rapides, un serpent qui se téléporte dans un mur après un aller-retour vers un autre onglet, la persistance du meilleur score, les commandes tactiles et des ressources externes qui cassent la page dès que l'on passe hors ligne. Demandez à une IA de le générer de zéro : le résultat semble jouable tout en dissimulant de vrais bugs.
