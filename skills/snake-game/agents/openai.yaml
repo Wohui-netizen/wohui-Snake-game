@@ -1,0 +1,4 @@
+interface:
+  display_name: "Snake Game"
+  short_description: "生成并验证可直接游玩的贪吃蛇网页游戏（含难度与计分）"
+  default_prompt: "用 $snake-game 生成一个可直接打开的贪吃蛇网页游戏，包含开始游戏和选择难度按钮。"

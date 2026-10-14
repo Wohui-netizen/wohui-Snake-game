@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>贪吃蛇</title>
+<style>
+  :root {
+    --page-bg: #f7f8fa;
+    --text: #1f2933;
+    --score: #a33b3b;
+    --muted: #5b6472;
+    --board-bg: #85e8d0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--page-bg);
+    color: var(--text);
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .game { width: min(480px, 92vw); padding: 14px 0 20px; }
+  .scoreboard {
+    margin: 0 0 10px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--score);
+    letter-spacing: 0.5px;
+  }
+  .board-wrap { position: relative; }
+  #board {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--board-bg);
+    border-radius: 4px;
+    touch-action: none;
+  }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 18px;
+    border-radius: 4px;
+    background: rgba(8, 38, 34, 0.55);
+    color: #fff;
+    text-align: center;
+  }
+  .overlay[hidden] { display: none; }
+  .overlay strong { font-size: 20px; }
+  .overlay span { font-size: 14px; opacity: 0.92; line-height: 1.5; }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 14px;
+  }
+  button {
+    min-width: 138px;
+    padding: 9px 18px;
+    font: inherit;
+    font-size: 15px;
+    color: var(--text);
+    background: #fff;
+    border: 1px solid #c8ccd4;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  button:hover { background: #f1f3f7; border-color: #8f97a5; }
+  button:active { background: #e7eaf0; }
+  button:focus-visible { outline: 2px solid #4f7df3; outline-offset: 2px; }
+  .hint {
+    margin: 12px 0 0;
+    min-height: 20px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<main class="game">
+  <p class="scoreboard" id="scoreboard">得分: 0　历史最高分: 0</p>
+  <div class="board-wrap">
+    <canvas id="board" width="480" height="480" role="img" aria-label="贪吃蛇游戏区域"></canvas>
+    <div class="overlay" id="overlay" hidden>
+      <strong id="overlay-title">贪吃蛇</strong>
+      <span id="overlay-hint">点击「开始游戏」，或用方向键立即开始</span>
+    </div>
+  </div>
+  <div class="controls">
+    <button id="start-btn" type="button">开始游戏</button>
+    <button id="difficulty-btn" type="button">选择难度：普通</button>
+  </div>
+  <p class="hint" id="hint" role="status" aria-live="polite"></p>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  /* 棋盘配色：浅青绿底 + 白色网格线，蛇头紫色、蛇身暗红、食物橙色。 */
+  var COLORS = {
+    board: '#85e8d0',
+    grid: 'rgba(255, 255, 255, 0.8)',
+    border: 'rgba(13, 122, 112, 0.55)',
+    food: '#ff9f1c',
+    body: '#b23a3a',
+    head: '#7b4fd8',
+    arrow: 'rgba(64, 10, 10, 0.5)',
+    eye: '#f6f2ff'
+  };
+
+  /* 难度越高，每走一格的时间越短，蛇就越快。 */
+  var DIFFICULTIES = [
+    { id: 'easy', label: '简单', stepMs: 220 },
+    { id: 'normal', label: '普通', stepMs: 150 },
+    { id: 'hard', label: '困难', stepMs: 100 },
+    { id: 'insane', label: '地狱', stepMs: 60 }
+  ];
+
+  var DIRECTIONS = {
+    up: { x: 0, y: -1 },
+    down: { x: 0, y: 1 },
+    left: { x: -1, y: 0 },
+    right: { x: 1, y: 0 }
+  };
+
+  var KEY_DIRECTIONS = {
+    arrowup: 'up', arrowdown: 'down', arrowleft: 'left', arrowright: 'right',
+    w: 'up', s: 'down', a: 'left', d: 'right'
+  };
+
+  function toDirection(value) {
+    if (typeof value === 'string') return DIRECTIONS[value] || null;
+    if (value && typeof value.x === 'number' && typeof value.y === 'number') {
+      if (Math.abs(value.x) + Math.abs(value.y) !== 1) return null;
+      return { x: value.x, y: value.y };
+    }
+    return null;
+  }
+
+  function SnakeGame(canvas, options) {
+    var config = options || {};
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.cols = config.cols || 20;
+    this.rows = config.rows || 20;
+    this.cell = config.cell || 24;
+    this.difficulties = config.difficulties || DIFFICULTIES;
+    this.difficultyIndex = typeof config.difficultyIndex === 'number' ? config.difficultyIndex : 1;
+    this.storageKey = config.storageKey || 'snake-game:best-score';
+    this.listeners = [];
+    this.best = this.readBest();
+    this.reset();
+    this.syncCanvasSize();
+    this.frame = this.frame.bind(this);
+    if (config.autoLoop !== false && typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(this.frame);
+    }
+  }
+
+  SnakeGame.prototype.difficulty = function () {
+    return this.difficulties[this.difficultyIndex];
+  };
+
+  SnakeGame.prototype.stepMs = function () {
+    return this.difficulty().stepMs;
+  };
+
+  SnakeGame.prototype.readBest = function () {
+    try {
+      var raw = window.localStorage.getItem(this.storageKey);
+      var value = parseInt(raw, 10);
+      return value > 0 ? value : 0;
+    } catch (error) {
+      return 0;
+    }
+  };
+
+  SnakeGame.prototype.saveBest = function (value) {
+    try {
+      window.localStorage.setItem(this.storageKey, String(value));
+    } catch (error) {
+      /* 隐私模式或 file:// 限制下忽略持久化失败。 */
+    }
+  };
+
+  SnakeGame.prototype.syncCanvasSize = function () {
+    var ratio = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+    var width = this.cols * this.cell;
+    var height = this.rows * this.cell;
+    this.canvas.width = Math.round(width * ratio);
+    this.canvas.height = Math.round(height * ratio);
+    if (this.ctx.setTransform) this.ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    this.width = width;
+    this.height = height;
+  };
+
+  SnakeGame.prototype.reset = function () {
+    var centerX = Math.floor(this.cols / 2);
+    var centerY = Math.floor(this.rows / 2);
+    this.snake = [
+      { x: centerX, y: centerY },
+      { x: centerX - 1, y: centerY },
+      { x: centerX - 2, y: centerY }
+    ];
+    this.direction = { x: 1, y: 0 };
+    this.queued = [];
+    this.score = 0;
+    this.state = 'idle';
+    this.endReason = null;
+    this.food = this.spawnFood();
+    this.accumulator = 0;
+    this.lastTimestamp = null;
+    this.emit();
+  };
+
+  SnakeGame.prototype.start = function () {
+    this.reset();
+    this.state = 'running';
+    this.lastTimestamp = null;
+    this.accumulator = 0;
+    this.emit();
+  };
+
+  SnakeGame.prototype.pause = function () {
+    if (this.state !== 'running') return;
+    this.state = 'paused';
+    this.emit();
+  };
+
+  SnakeGame.prototype.resume = function () {
+    if (this.state !== 'paused') return;
+    this.state = 'running';
+    this.lastTimestamp = null;
+    this.accumulator = 0;
+    this.emit();
+  };
+
+  SnakeGame.prototype.toggleStart = function () {
+    if (this.state === 'running') this.pause();
+    else if (this.state === 'paused') this.resume();
+    else this.start();
+  };
+
+  SnakeGame.prototype.setDirection = function (input) {
+    var next = toDirection(input);
+    if (!next) return;
+    var reference = this.queued.length ? this.queued[this.queued.length - 1] : this.direction;
+    if (next.x === -reference.x && next.y === -reference.y) return;
+    if (next.x === reference.x && next.y === reference.y) return;
+    if (this.queued.length >= 2) return;
+    this.queued.push(next);
+  };
+
+  SnakeGame.prototype.setDifficulty = function (value) {
+    var index = this.difficultyIndex;
+    if (typeof value === 'number') {
+      index = Math.max(0, Math.min(this.difficulties.length - 1, value));
+    } else {
+      for (var i = 0; i < this.difficulties.length; i++) {
+        if (this.difficulties[i].id === value) index = i;
+      }
+    }
+    if (index === this.difficultyIndex) return;
+    this.difficultyIndex = index;
+    this.accumulator = 0;
+    this.emit();
+  };
+
+  SnakeGame.prototype.nextDifficulty = function () {
+    this.setDifficulty((this.difficultyIndex + 1) % this.difficulties.length);
+  };
+
+  SnakeGame.prototype.spawnFood = function () {
+    var taken = {};
+    for (var i = 0; i < this.snake.length; i++) {
+      taken[this.snake[i].x + ',' + this.snake[i].y] = true;
+    }
+    var free = [];
+    for (var y = 0; y < this.rows; y++) {
+      for (var x = 0; x < this.cols; x++) {
+        if (!taken[x + ',' + y]) free.push({ x: x, y: y });
+      }
+    }
+    if (!free.length) return null;
+    return free[Math.floor(Math.random() * free.length)];
+  };
+
+  SnakeGame.prototype.end = function (reason) {
+    this.state = 'over';
+    this.endReason = reason;
+    if (this.score > this.best) {
+      this.best = this.score;
+      this.saveBest(this.best);
+    }
+    this.emit();
+  };
+
+  SnakeGame.prototype.tick = function () {
+    if (this.state !== 'running') return;
+
+    if (this.queued.length) {
+      var wanted = this.queued.shift();
+      if (!(wanted.x === -this.direction.x && wanted.y === -this.direction.y)) {
+        this.direction = wanted;
+      }
+    }
+
+    var head = this.snake[0];
+    var nextX = head.x + this.direction.x;
+    var nextY = head.y + this.direction.y;
+
+    if (nextX < 0 || nextY < 0 || nextX >= this.cols || nextY >= this.rows) {
+      this.end('wall');
+      return;
+    }
+
+    var eating = !!this.food && nextX === this.food.x && nextY === this.food.y;
+    var body = eating ? this.snake : this.snake.slice(0, -1);
+    for (var i = 0; i < body.length; i++) {
+      if (body[i].x === nextX && body[i].y === nextY) {
+        this.end('self');
+        return;
+      }
+    }
+
+    this.snake.unshift({ x: nextX, y: nextY });
+    if (eating) {
+      this.score += 1;
+      this.food = this.spawnFood();
+      if (!this.food) {
+        this.end('win');
+        return;
+      }
+    } else {
+      this.snake.pop();
+    }
+    this.emit();
+  };
+
+  SnakeGame.prototype.frame = function (timestamp) {
+    if (this.state === 'running') {
+      if (this.lastTimestamp === null) this.lastTimestamp = timestamp;
+      var delta = Math.min(timestamp - this.lastTimestamp, this.stepMs() * 4);
+      this.lastTimestamp = timestamp;
+      this.accumulator += Math.max(0, delta);
+      while (this.state === 'running' && this.accumulator >= this.stepMs()) {
+        this.accumulator -= this.stepMs();
+        this.tick();
+      }
+    } else {
+      this.lastTimestamp = null;
+      this.accumulator = 0;
+    }
+    this.render();
+    if (typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(this.frame);
+    }
+  };
+
+  SnakeGame.prototype.snapshot = function () {
+    return {
+      state: this.state,
+      reason: this.endReason,
+      score: this.score,
+      best: this.best,
+      length: this.snake.length,
+      cells: this.cols * this.rows,
+      stepMs: this.stepMs(),
+      difficulty: this.difficulty(),
+      difficultyIndex: this.difficultyIndex,
+      snake: this.snake.map(function (segment) {
+        return { x: segment.x, y: segment.y };
+      }),
+      food: this.food ? { x: this.food.x, y: this.food.y } : null
+    };
+  };
+
+  SnakeGame.prototype.subscribe = function (listener) {
+    if (typeof listener !== 'function') return function () {};
+    this.listeners.push(listener);
+    listener(this.snapshot());
+    var self = this;
+    return function () {
+      var index = self.listeners.indexOf(listener);
+      if (index >= 0) self.listeners.splice(index, 1);
+    };
+  };
+
+  SnakeGame.prototype.emit = function () {
+    var snapshot = this.snapshot();
+    for (var i = 0; i < this.listeners.length; i++) {
+      this.listeners[i](snapshot);
+    }
+  };
+
+  SnakeGame.prototype.roundRect = function (x, y, width, height, radius) {
+    var ctx = this.ctx;
+    var r = Math.min(radius, width / 2, height / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + width - r, y);
+    ctx.arcTo(x + width, y, x + width, y + r, r);
+    ctx.lineTo(x + width, y + height - r);
+    ctx.arcTo(x + width, y + height, x + width - r, y + height, r);
+    ctx.lineTo(x + r, y + height);
+    ctx.arcTo(x, y + height, x, y + height - r, r);
+    ctx.lineTo(x, y + r);
+    ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath();
+  };
+
+  SnakeGame.prototype.arrowDirection = function (index) {
+    if (index === 0) return this.direction;
+    var ahead = this.snake[index - 1];
+    var here = this.snake[index];
+    return { x: Math.sign(ahead.x - here.x), y: Math.sign(ahead.y - here.y) };
+  };
+
+  SnakeGame.prototype.render = function () {
+    var ctx = this.ctx;
+    var cell = this.cell;
+    var width = this.cols * cell;
+    var height = this.rows * cell;
+    var i;
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = COLORS.board;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = COLORS.grid;
+    ctx.beginPath();
+    for (i = 0; i <= this.cols; i++) {
+      var px = Math.round(i * cell) + 0.5;
+      ctx.moveTo(px, 0);
+      ctx.lineTo(px, height);
+    }
+    for (i = 0; i <= this.rows; i++) {
+      var py = Math.round(i * cell) + 0.5;
+      ctx.moveTo(0, py);
+      ctx.lineTo(width, py);
+    }
+    ctx.stroke();
+
+    if (this.food) {
+      this.roundRect(this.food.x * cell + 3, this.food.y * cell + 3, cell - 6, cell - 6, 4);
+      ctx.fillStyle = COLORS.food;
+      ctx.fill();
+    }
+
+    for (i = this.snake.length - 1; i >= 0; i--) {
+      var segment = this.snake[i];
+      var left = segment.x * cell + 1.5;
+      var top = segment.y * cell + 1.5;
+      this.roundRect(left, top, cell - 3, cell - 3, 3);
+      ctx.fillStyle = i === 0 ? COLORS.head : COLORS.body;
+      ctx.fill();
+      if (i > 0) this.drawArrow(segment, this.arrowDirection(i));
+    }
+
+    if (this.snake.length) this.drawEyes(this.snake[0]);
+
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = COLORS.border;
+    ctx.strokeRect(1, 1, width - 2, height - 2);
+  };
+
+  SnakeGame.prototype.drawArrow = function (segment, direction) {
+    var ctx = this.ctx;
+    var cell = this.cell;
+    var centerX = segment.x * cell + cell / 2;
+    var centerY = segment.y * cell + cell / 2;
+    var size = cell * 0.22;
+    var perpendicularX = -direction.y;
+    var perpendicularY = direction.x;
+
+    ctx.beginPath();
+    ctx.moveTo(centerX + direction.x * size, centerY + direction.y * size);
+    ctx.lineTo(
+      centerX - direction.x * size * 0.7 + perpendicularX * size * 0.9,
+      centerY - direction.y * size * 0.7 + perpendicularY * size * 0.9
+    );
+    ctx.lineTo(
+      centerX - direction.x * size * 0.7 - perpendicularX * size * 0.9,
+      centerY - direction.y * size * 0.7 - perpendicularY * size * 0.9
+    );
+    ctx.closePath();
+    ctx.fillStyle = COLORS.arrow;
+    ctx.fill();
+  };
+
+  SnakeGame.prototype.drawEyes = function (head) {
+    var ctx = this.ctx;
+    var cell = this.cell;
+    var offset = cell * 0.2;
+    var forward = cell * 0.18;
+    var radius = Math.max(1.2, cell * 0.07);
+    var perpendicularX = -this.direction.y;
+    var perpendicularY = this.direction.x;
+    var baseX = head.x * cell + cell / 2 + this.direction.x * forward;
+    var baseY = head.y * cell + cell / 2 + this.direction.y * forward;
+    var eyes = [
+      { x: baseX + perpendicularX * offset, y: baseY + perpendicularY * offset },
+      { x: baseX - perpendicularX * offset, y: baseY - perpendicularY * offset }
+    ];
+    ctx.fillStyle = COLORS.eye;
+    for (var i = 0; i < eyes.length; i++) {
+      ctx.beginPath();
+      ctx.arc(eyes[i].x, eyes[i].y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  };
+
+  function reasonText(reason) {
+    if (reason === 'wall') return '撞到墙壁，游戏失败';
+    if (reason === 'self') return '撞到自己，游戏失败';
+    if (reason === 'win') return '全部格子已填满，恭喜通关';
+    return '游戏结束';
+  }
+
+  function boot() {
+    var canvas = document.getElementById('board');
+    if (!canvas || !canvas.getContext) return;
+
+    var scoreboard = document.getElementById('scoreboard');
+    var overlay = document.getElementById('overlay');
+    var overlayTitle = document.getElementById('overlay-title');
+    var overlayHint = document.getElementById('overlay-hint');
+    var startButton = document.getElementById('start-btn');
+    var difficultyButton = document.getElementById('difficulty-btn');
+    var hint = document.getElementById('hint');
+
+    var game = new SnakeGame(canvas, { cols: 20, rows: 20, cell: 24, difficultyIndex: 1 });
+    window.snakeGame = game;
+
+    game.subscribe(function (snapshot) {
+      scoreboard.textContent = '得分: ' + snapshot.score + '　历史最高分: ' + snapshot.best;
+      difficultyButton.textContent = '选择难度：' + snapshot.difficulty.label;
+      startButton.textContent = snapshot.state === 'running' ? '暂停游戏'
+        : snapshot.state === 'paused' ? '继续游戏'
+        : snapshot.state === 'over' ? '重新开始' : '开始游戏';
+
+      if (snapshot.state === 'idle') {
+        overlayTitle.textContent = '贪吃蛇';
+        overlayHint.textContent = '点击「开始游戏」，或用方向键立即开始';
+        overlay.hidden = false;
+      } else if (snapshot.state === 'paused') {
+        overlayTitle.textContent = '已暂停';
+        overlayHint.textContent = '点击「继续游戏」或按空格继续';
+        overlay.hidden = false;
+      } else if (snapshot.state === 'over') {
+        overlayTitle.textContent = snapshot.reason === 'win' ? '恭喜通关！' : '游戏结束';
+        overlayHint.textContent = reasonText(snapshot.reason) + '，最终得分 ' + snapshot.score;
+        overlay.hidden = false;
+      } else {
+        overlay.hidden = true;
+      }
+
+      hint.textContent = '当前难度：' + snapshot.difficulty.label
+        + '，每 ' + snapshot.stepMs + ' 毫秒移动一格'
+        + '（方向键 / WASD 转向，空格暂停或继续）';
+    });
+
+    startButton.addEventListener('click', function () {
+      game.toggleStart();
+    });
+
+    difficultyButton.addEventListener('click', function () {
+      game.nextDifficulty();
+    });
+
+    window.addEventListener('keydown', function (event) {
+      var tag = (event.target && event.target.tagName ? event.target.tagName : '').toLowerCase();
+      if (tag === 'button' || tag === 'select' || tag === 'input' || tag === 'textarea') return;
+
+      var key = String(event.key || '').toLowerCase();
+      if (key === ' ' || key === 'spacebar' || event.code === 'Space') {
+        event.preventDefault();
+        game.toggleStart();
+        return;
+      }
+
+      var wanted = KEY_DIRECTIONS[key];
+      if (!wanted) return;
+      event.preventDefault();
+      if (game.state === 'idle' || game.state === 'over') game.start();
+      game.setDirection(wanted);
+    });
+
+    var touchStart = null;
+    canvas.addEventListener('touchstart', function (event) {
+      var touch = event.changedTouches[0];
+      touchStart = { x: touch.clientX, y: touch.clientY };
+    }, { passive: true });
+
+    canvas.addEventListener('touchend', function (event) {
+      if (!touchStart) return;
+      var touch = event.changedTouches[0];
+      var deltaX = touch.clientX - touchStart.x;
+      var deltaY = touch.clientY - touchStart.y;
+      touchStart = null;
+
+      if (game.state === 'idle' || game.state === 'over') {
+        game.start();
+      }
+      if (Math.abs(deltaX) < 24 && Math.abs(deltaY) < 24) {
+        game.toggleStart();
+      } else if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        game.setDirection(deltaX > 0 ? 'right' : 'left');
+      } else {
+        game.setDirection(deltaY > 0 ? 'down' : 'up');
+      }
+    }, { passive: true });
+
+    game.render();
+  }
+
+  window.SnakeGame = SnakeGame;
+  window.SNAKE_DIFFICULTIES = DIFFICULTIES;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+</body>
+</html>
