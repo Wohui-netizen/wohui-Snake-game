@@ -150,7 +150,11 @@ def main(argv: list[str]) -> int:
 
     browser = find_browser()
     if browser:
-        profile = os.path.join(tempfile.gettempdir(), "snake-app-profile")
+        # A brand-new profile per launch forces a brand-new browser instance.
+        # Reusing one profile lets an already-running Edge/Chrome swallow the
+        # request and exit at once, which kills this server and leaves the app
+        # window showing "cannot connect".
+        profile = tempfile.mkdtemp(prefix="snake-app-")
         process = subprocess.Popen([                             # noqa: S603
             browser,
             f"--app={url}",
@@ -158,11 +162,21 @@ def main(argv: list[str]) -> int:
             f"--user-data-dir={profile}",
             "--no-first-run",
             "--no-default-browser-check",
-        ])
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         try:
-            process.wait()                                       # exits when the window is closed
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.wait()                                       # window is up; end when it closes
+            return 0
+        # The browser exited immediately: fall back to the default browser and
+        # keep this server alive so the page keeps working.
+        webbrowser.open(url)
+        print(f"{APP_NAME} is running at {url} - press Ctrl+C to stop.")
+        try:
+            while True:
+                time.sleep(1)
         except KeyboardInterrupt:
-            process.terminate()
+            pass
         return 0
 
     webbrowser.open(url)                                         # last resort
